@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dwtrvtqks0ay8"
+
+[deps]
+
+files=["res://demo_labels.en.translation"]
+
+source_file="res://demo_labels.csv"
+dest_files=["res://demo_labels.en.translation"]
+
+[params]
+
+compress=true
+delimiter=0
