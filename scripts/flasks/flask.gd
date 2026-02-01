@@ -63,7 +63,7 @@ func fetch_initial_color():
 	
 	http.request(OLLAMA_URL, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body_data))
 
-func _on_color_received(result, response_code, headers, body, http_node):
+func _on_color_received(_result, response_code, _headers, body, http_node):
 	if response_code == 200:
 		var json = JSON.parse_string(body.get_string_from_utf8())
 		if json and "response" in json:

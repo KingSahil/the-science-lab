@@ -95,7 +95,7 @@ func fetch_reaction_data(chem_pair: String):
 	
 	equation_request.request(OLLAMA_URL, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body_data))
 
-func _on_reaction_data_response(result, response_code, headers, body):
+func _on_reaction_data_response(_result, response_code, _headers, body):
 	if response_code == 200:
 		var json = JSON.parse_string(body.get_string_from_utf8())
 		if json and "response" in json:
@@ -145,12 +145,24 @@ func _input(event):
 				fetch_learn_more()
 
 func fetch_learn_more():
-	text = "Asking Gemma for details..."
-	var prompt = "Explain the reaction: " + current_chemicals + " simply."
-	var body_data = { "model": MODEL_NAME, "prompt": prompt, "stream": false }
+	text = "Asking Gemma..."
+	
+	# SPEED TRICK: Strict structure + limit tokens
+	var prompt = "Explain " + current_chemicals + " strictly in this format under 50 words:\nReaction Type: [Type]\nKey Science: [One simple sentence]"
+	
+	var body_data = {
+		"model": MODEL_NAME,
+		"prompt": prompt,
+		"stream": false,
+		"options": {
+			"num_predict": 60, # Stop generating immediately after ~50 words
+			"temperature": 0.2 # Be precise
+		}
+	}
+	
 	http_request.request(OLLAMA_URL, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body_data))
 
-func _on_explanation_response(result, response_code, headers, body):
+func _on_explanation_response(_result, response_code, _headers, body):
 	if response_code == 200:
 		var json = JSON.parse_string(body.get_string_from_utf8())
 		if json and "response" in json:

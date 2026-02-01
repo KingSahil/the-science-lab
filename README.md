@@ -46,4 +46,3 @@ the-science-lab/
 1. Open the project in Godot Engine 4.x
 2. Run the main scene: `scenes/main/node_3d.tscn`
 3. Use WASD to move and mouse to interact with flasks
-

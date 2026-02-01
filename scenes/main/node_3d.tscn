@@ -440,23 +440,23 @@ offset_bottom = 66.0
 text = "Close"
 
 [node name="DetailPanel" type="Panel" parent="CanvasLayer/reaction label" unique_id=2094466800]
-visible = false
 layout_mode = 0
-offset_right = 1154.0
-offset_bottom = 643.0
+offset_left = 229.0
+offset_right = 926.0
+offset_bottom = 402.0
 
 [node name="RichTextLabel" type="RichTextLabel" parent="CanvasLayer/reaction label/DetailPanel" unique_id=319125383]
 layout_mode = 0
-offset_right = 1152.0
-offset_bottom = 643.0
+offset_right = 699.0
+offset_bottom = 394.0
 bbcode_enabled = true
 
 [node name="CloseButton" type="Button" parent="CanvasLayer/reaction label/DetailPanel" unique_id=246621191]
 layout_mode = 0
-offset_left = 22.0
-offset_top = 19.0
-offset_right = 82.0
-offset_bottom = 66.0
+offset_left = -213.0
+offset_top = 16.0
+offset_right = -153.0
+offset_bottom = 63.0
 text = "Close"
 
 [node name="flasks" type="Node3D" parent="." unique_id=1222794006]

@@ -124,7 +124,7 @@ transform = Transform3D(1, 0, 0, 0, -1, 8.74228e-08, 0, -8.74228e-08, -1, 0, 0, 
 
 [node name="RigidBody3D" type="RigidBody3D" parent="." unique_id=999209587]
 script = ExtResource("1_u4vhm")
-chemical_name = "Cao"
+chemical_name = "NaOH"
 
 [node name="lab_erlenmeyer_a_0" type="MeshInstance3D" parent="RigidBody3D" unique_id=257976369]
 transform = Transform3D(0.0809978, -0.000136841, -0.000587163, 0.000587214, 2.96553e-05, 0.0809979, -0.000136623, -0.0809999, 3.06467e-05, 0.00700557, 0.0135591, 0.0105451)
