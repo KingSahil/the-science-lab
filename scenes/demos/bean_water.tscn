@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3 uid="uid://ds67apunlw0t0"]
+
+[ext_resource type="Shader" uid="uid://citvahd76i2k8" path="res://addons/liquidShader.gdshader" id="1_74dpf"]
+[ext_resource type="Script" uid="uid://cbwdmabteofdt" path="res://scripts/liquids/LiquidWobble.gd" id="2_iuivp"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_6birj"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kh7nl"]
+render_priority = 0
+shader = ExtResource("1_74dpf")
+shader_parameter/liquid_height = 0.225
+shader_parameter/liquid_surface_color = Color(0.981777, 0.402178, 0.49117, 1)
+shader_parameter/rim_emission_intensity = 0.2
+shader_parameter/rim_exponent = 3.0
+shader_parameter/emission_intensity = 0.1
+shader_parameter/liquid_surface_gradient_size = 3.0
+shader_parameter/wobble = Vector2(0, 0)
+
+[node name="Node3D" type="Node3D"]
+transform = Transform3D(0.999483, 0.0321608, 0, -0.0321608, 0.999483, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transparency = 0.69
+mesh = SubResource("CapsuleMesh_6birj")
+
+[node name="water" type="MeshInstance3D" parent="MeshInstance3D"]
+transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 0, 0, 0)
+material_override = SubResource("ShaderMaterial_kh7nl")
+mesh = SubResource("CapsuleMesh_6birj")
+skeleton = NodePath("../..")
+script = ExtResource("2_iuivp")

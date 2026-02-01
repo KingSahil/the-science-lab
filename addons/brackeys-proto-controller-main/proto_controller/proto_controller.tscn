@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://bs72ogkvdd7d6"]
+[gd_scene format=3 uid="uid://bs72ogkvdd7d6"]
 
 [ext_resource type="Script" uid="uid://b3kuntpm7dxj8" path="res://addons/brackeys-proto-controller-main/proto_controller/proto_controller.gd" id="1_ucva2"]
 
@@ -13,38 +13,38 @@ height = 1.8
 radius = 0.4
 height = 1.8
 
-[node name="ProtoController" type="CharacterBody3D"]
+[node name="ProtoController" type="CharacterBody3D" unique_id=1645263897]
 collision_layer = 3
 collision_mask = 2
 script = ExtResource("1_ucva2")
 can_sprint = true
 
-[node name="Mesh" type="MeshInstance3D" parent="."]
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=591469412]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 material_override = SubResource("StandardMaterial3D_iof21")
 cast_shadow = 0
 mesh = SubResource("CapsuleMesh_ucva2")
 
-[node name="Collider" type="CollisionShape3D" parent="."]
+[node name="Collider" type="CollisionShape3D" parent="." unique_id=250011697]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_iof21")
 
-[node name="Head" type="Node3D" parent="."]
+[node name="Head" type="Node3D" parent="." unique_id=1598956228]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
 
-[node name="Camera3D" type="Camera3D" parent="Head"]
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=1297001017]
 
-[node name="interaction" type="RayCast3D" parent="Head/Camera3D"]
+[node name="interaction" type="RayCast3D" parent="Head/Camera3D" unique_id=1542717098]
 target_position = Vector3(0, 0, -2)
 
-[node name="hand" type="Marker3D" parent="Head/Camera3D"]
+[node name="hand" type="Marker3D" parent="Head/Camera3D" unique_id=1533781623]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.5577)
 
-[node name="Generic6DOFJoint3D" type="Generic6DOFJoint3D" parent="Head/Camera3D"]
+[node name="Generic6DOFJoint3D" type="Generic6DOFJoint3D" parent="Head/Camera3D" unique_id=620216651]
 node_a = NodePath("../StaticBody3D")
 linear_limit_x/enabled = false
 linear_limit_y/enabled = false
 linear_limit_z/enabled = false
 
-[node name="StaticBody3D" type="StaticBody3D" parent="Head/Camera3D"]
+[node name="StaticBody3D" type="StaticBody3D" parent="Head/Camera3D" unique_id=1705157332]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.558)
