@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://addons/brackeys-proto-controller-main/proto_controller/proto_controller.tscn" id="1_a202f"]
 [ext_resource type="Texture2D" uid="uid://dhrokvlaee7vu" path="res://addons/FPS-controller-assets-main/assets/hdris/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="1_r3fl7"]
 [ext_resource type="Texture2D" uid="uid://61o4oeybc41o" path="res://addons/FPS-controller-assets-main/assets/hdris/chemistry_lab_table_0.png" id="3_a0tk4"]
-[ext_resource type="Shader" uid="uid://bi3o8elbtqoni" path="res://addons/simplegrasstextured/shaders/grass.gdshader" id="3_wc5p8"]
+[ext_resource type="Shader" path="res://addons/simplegrasstextured/shaders/grass.gdshader" id="3_wc5p8"]
 [ext_resource type="Texture2D" uid="uid://c4ggdp0kg5wjk" path="res://addons/simplegrasstextured/textures/grassbushcc008.png" id="4_jsk3o"]
 [ext_resource type="Script" uid="uid://2juaclm8gc1n" path="res://addons/simplegrasstextured/grass.gd" id="5_4arys"]
 [ext_resource type="Shader" uid="uid://citvahd76i2k8" path="res://addons/liquidShader.gdshader" id="8_4arys"]
@@ -51,29 +51,6 @@ albedo_color = Color(0, 1, 0, 1)
 resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("3_wc5p8")
-shader_parameter/albedo = Color(1, 1, 1, 1)
-shader_parameter/texture_albedo = ExtResource("4_jsk3o")
-shader_parameter/texture_frames = Vector2(1, 1)
-shader_parameter/light_mode = 1
-shader_parameter/alpha_scissor_threshold = 0.5
-shader_parameter/normal_scale = 1.0
-shader_parameter/metallic = 0.0
-shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
-shader_parameter/roughness = 1.0
-shader_parameter/roughness_texture_channel = Vector4(1, 0, 0, 0)
-shader_parameter/specular = 0.5
-shader_parameter/scale_h = 1.0
-shader_parameter/scale_w = 1.0
-shader_parameter/scale_var = -0.25
-shader_parameter/grass_strength = 0.55
-shader_parameter/optimization_by_distance = false
-shader_parameter/optimization_level = 7.0
-shader_parameter/optimization_dist_min = 10.0
-shader_parameter/optimization_dist_max = 50.0
-shader_parameter/grass_size_y = 1.0
-shader_parameter/interactive_mode = true
-shader_parameter/interactive_level_xz = 3.0
-shader_parameter/interactive_level_y = 0.3
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_6iypd"]
 _surfaces = [{
