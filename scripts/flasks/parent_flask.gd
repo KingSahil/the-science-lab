@@ -62,7 +62,8 @@ func _physics_process(delta):
 func handle_flask(source_flask, source_material, source_particles, target_flask, target_material, delta):
 	var flask_up = source_flask.global_transform.basis.y.normalized()
 	var tilt_angle = rad_to_deg(flask_up.angle_to(Vector3.UP))
-	var is_tilted = tilt_angle > 50.0
+	var is_tilted = tilt_angle > 85.0
+
 
 	
 	if is_tilted:

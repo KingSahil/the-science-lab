@@ -28,9 +28,10 @@ const COLOR_MAP = {
 	"brown": Color.SADDLE_BROWN
 }
 
-const TILT_THRESHOLD = 50.0
+@export var tilt_threshold: float = 85.0
 const DRAIN_SPEED = 0.2
 const FILL_SPEED = 0.2
+
 
 var last_reaction_time = 0.0
 
@@ -103,7 +104,8 @@ func _physics_process(delta):
 	var flask_up = global_transform.basis.y.normalized()
 	var tilt_angle = rad_to_deg(flask_up.angle_to(Vector3.UP))
 	
-	if tilt_angle > TILT_THRESHOLD:
+	if tilt_angle > tilt_threshold:
+
 		if current_liquid_height > -0.6:
 			particles.emitting = true
 			current_liquid_height -= DRAIN_SPEED * delta
