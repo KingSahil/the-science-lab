@@ -41,7 +41,7 @@ func _ready():
 	else:
 		apply_color_by_name("clear")
 
-# --- AUTO-COLOR LOGIC (UPDATED WITH CACHE) ---
+# --- AUTO-COLOR LOGIC (UPDATED WITH AI & CACHE) ---
 func fetch_initial_color():
 	# 1. TRY CACHE FIRST
 	if has_node("/root/SQLCache"):
@@ -49,35 +49,29 @@ func fetch_initial_color():
 		if cached_color:
 			print(name, ": Cache Hit! Loaded color for ", chemical_name)
 			apply_color_by_name(cached_color)
-			return # Stop here, don't ask Gemma
+			return # Stop here, don't ask AI
 			
-	# 2. CACHE MISS? ASK GEMMA
-	print(name, ": Cache Miss. Asking Gemma for color of ", chemical_name)
-	
-	var http = HTTPRequest.new()
-	add_child(http)
-	http.request_completed.connect(_on_color_received.bind(http))
+	# 2. CACHE MISS? ASK AI (Groq with Gemma Fallback)
+	print(name, ": Cache Miss. Asking AI for color of ", chemical_name)
 	
 	var prompt = "What is the visual color of liquid " + chemical_name + "? Return ONLY one word (e.g., Blue, Clear, Red)."
-	var body_data = { "model": MODEL_NAME, "prompt": prompt, "stream": false }
 	
-	http.request(OLLAMA_URL, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body_data))
+	var ai_node = get_node_or_null("/root/AIService")
+	if ai_node:
+		ai_node.request_ai(prompt, func(response_text: String, success: bool):
+			if success and response_text != "":
+				var color_name = response_text.strip_edges().to_lower()
+				color_name = color_name.replace(".", "")
+				
+				print(name, ": AI color result is ", color_name)
+				apply_color_by_name(color_name)
+				
+				# 3. SAVE TO CACHE
+				if has_node("/root/SQLCache"):
+					get_node("/root/SQLCache").save_chemical_color(chemical_name, color_name)
+		)
 
-func _on_color_received(_result, response_code, _headers, body, http_node):
-	if response_code == 200:
-		var json = JSON.parse_string(body.get_string_from_utf8())
-		if json and "response" in json:
-			var color_name = json["response"].strip_edges().to_lower()
-			color_name = color_name.replace(".", "")
-			
-			print(name, ": Gemma says color is ", color_name)
-			apply_color_by_name(color_name)
-			
-			# 3. SAVE TO CACHE
-			if has_node("/root/SQLCache"):
-				get_node("/root/SQLCache").save_chemical_color(chemical_name, color_name)
-	
-	http_node.queue_free()
+
 
 func apply_color_by_name(color_name: String):
 	var target_color = Color(0.8, 0.9, 1.0, 0.5) 

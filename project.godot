@@ -47,6 +47,7 @@ config/icon="res://icon.svg"
 
 SimpleGrass="*res://addons/simplegrasstextured/singleton.tscn"
 SQLCache="*uid://7fp0kyqqxm3r"
+AIService="*res://scripts/core/AIService.gd"
 
 [editor_plugins]
 

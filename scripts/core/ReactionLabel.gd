@@ -25,15 +25,11 @@ func _ready():
 		detail_panel.visible = false
 	visible = false
 	
-	# 2. Connect Buttons and Signals
+	# 2. Connect Buttons
 	if close_button:
 		if not close_button.pressed.is_connected(_on_close_pressed):
 			close_button.pressed.connect(_on_close_pressed)
-	
-	if http_request:
-		http_request.request_completed.connect(_on_explanation_response)
-	if equation_request:
-		equation_request.request_completed.connect(_on_reaction_data_response)
+
 
 # --- SHOWING THE LABEL ---
 func show_reaction(chemicals: String, flask_object = null):
@@ -68,8 +64,8 @@ func fetch_reaction_data(chem_pair: String):
 					current_explanation_cache = cached_data["explanation"]
 				return # Stop here, no need to ask Gemma!
 
-	# B. Cache Miss? Ask Gemma
-	print("MISS CACHE! Asking Gemma...")
+	# B. Cache Miss? Ask AI (Groq with Gemma Fallback)
+	print("MISS CACHE! Asking AI...")
 	
 	var prompt = """
 	Act as a chemistry database. Analyze this reaction: %s
@@ -86,44 +82,32 @@ func fetch_reaction_data(chem_pair: String):
 	Effect: None
 	""" % chem_pair
 	
-	var body_data = {
-		"model": MODEL_NAME,
-		"prompt": prompt,
-		"stream": false,
-		"temperature": 0.1
-	}
-	
-	equation_request.request(OLLAMA_URL, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body_data))
+	var ai_node = get_node_or_null("/root/AIService")
+	if ai_node:
+		ai_node.request_ai(prompt, func(response_text: String, success: bool):
+			if success and response_text != "":
+				var product = "..."
+				var color = "Clear"
+				var effect = "None"
+				
+				var lines = response_text.split("\n")
+				for line in lines:
+					line = line.strip_edges()
+					if line.begins_with("Product:"):
+						product = line.replace("Product:", "").strip_edges()
+					elif line.begins_with("Color:"):
+						color = line.replace("Color:", "").strip_edges()
+					elif line.begins_with("Effect:"):
+						effect = line.replace("Effect:", "").strip_edges()
+				
+				update_ui_from_data(product, color, effect)
+				
+				if has_node("/root/SQLCache"):
+					var parts = current_chemicals.split("+")
+					if parts.size() >= 2:
+						get_node("/root/SQLCache").save_reaction(parts[0].strip_edges(), parts[1].strip_edges(), product, color, effect, "")
+		, 0.1)
 
-func _on_reaction_data_response(_result, response_code, _headers, body):
-	if response_code == 200:
-		var json = JSON.parse_string(body.get_string_from_utf8())
-		if json and "response" in json:
-			var full_response = json["response"]
-			
-			var product = "..."
-			var color = "Clear"
-			var effect = "None"
-			
-			# Parse line by line
-			var lines = full_response.split("\n")
-			for line in lines:
-				line = line.strip_edges()
-				if line.begins_with("Product:"):
-					product = line.replace("Product:", "").strip_edges()
-				elif line.begins_with("Color:"):
-					color = line.replace("Color:", "").strip_edges()
-				elif line.begins_with("Effect:"):
-					effect = line.replace("Effect:", "").strip_edges()
-			
-			# Update UI & Visuals
-			update_ui_from_data(product, color, effect)
-			
-			# Save partial data to Cache
-			if has_node("/root/SQLCache"):
-				var parts = current_chemicals.split("+")
-				if parts.size() >= 2:
-					get_node("/root/SQLCache").save_reaction(parts[0].strip_edges(), parts[1].strip_edges(), product, color, effect, "")
 
 # Helper to update UI (Used by both Cache and AI)
 func update_ui_from_data(product, color, effect):
@@ -145,38 +129,21 @@ func _input(event):
 				fetch_learn_more()
 
 func fetch_learn_more():
-	text = "Asking Gemma..."
+	text = "Asking AI..."
 	
-	# SPEED TRICK: Strict structure + limit tokens
 	var prompt = "Explain " + current_chemicals + " strictly in this format under 50 words:\nReaction Type: [Type]\nKey Science: [One simple sentence]"
 	
-	var body_data = {
-		"model": MODEL_NAME,
-		"prompt": prompt,
-		"stream": false,
-		"options": {
-			"num_predict": 60, # Stop generating immediately after ~50 words
-			"temperature": 0.2 # Be precise
-		}
-	}
-	
-	http_request.request(OLLAMA_URL, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body_data))
+	var ai_node = get_node_or_null("/root/AIService")
+	if ai_node:
+		ai_node.request_ai(prompt, func(response_text: String, success: bool):
+			if success and response_text != "":
+				show_detail_panel(response_text)
+			else:
+				detail_text.text = "Error fetching explanation."
+				detail_panel.visible = true
+		, 0.2, 60)
 
-func _on_explanation_response(_result, response_code, _headers, body):
-	if response_code == 200:
-		var json = JSON.parse_string(body.get_string_from_utf8())
-		if json and "response" in json:
-			var explanation = json["response"]
-			show_detail_panel(explanation)
-			
-			# Update Cache with the new explanation!
-			# Note: This logic assumes your save_reaction handles updates or you don't mind duplicates/overwrites
-			# For a simple project, saving again is fine.
-			if has_node("/root/SQLCache"):
-				pass 
-	else:
-		detail_text.text = "Error fetching explanation."
-		detail_panel.visible = true
+
 
 func show_detail_panel(content: String):
 	# 1. Set the long text inside the popup

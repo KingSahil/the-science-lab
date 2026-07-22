@@ -51,6 +51,11 @@ Thumbs.db
 ehthumbs.db
 desktop.ini
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # IDE, Editor, and Tooling ignores
 .vscode/
 .idea/
