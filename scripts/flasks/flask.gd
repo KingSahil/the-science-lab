@@ -28,9 +28,10 @@ const COLOR_MAP = {
 	"brown": Color.SADDLE_BROWN
 }
 
-const TILT_THRESHOLD = 90
+const TILT_THRESHOLD = 50.0
 const DRAIN_SPEED = 0.2
 const FILL_SPEED = 0.2
+
 var last_reaction_time = 0.0
 
 func _ready():
@@ -98,8 +99,11 @@ func apply_color_by_name(color_name: String):
 
 # --- PHYSICS LOGIC ---
 func _physics_process(delta):
-	var rot = rotation_degrees
-	if abs(rot.x) > TILT_THRESHOLD or abs(rot.z) > TILT_THRESHOLD:
+
+	var flask_up = global_transform.basis.y.normalized()
+	var tilt_angle = rad_to_deg(flask_up.angle_to(Vector3.UP))
+	
+	if tilt_angle > TILT_THRESHOLD:
 		if current_liquid_height > -0.6:
 			particles.emitting = true
 			current_liquid_height -= DRAIN_SPEED * delta
@@ -109,6 +113,7 @@ func _physics_process(delta):
 			particles.emitting = false
 	else:
 		particles.emitting = false
+
 
 func handle_pouring(delta):
 	if not pour_ray: return

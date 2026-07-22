@@ -403,11 +403,12 @@ func _make_item_card(item) -> Button:
 	var formula := _label(str(item.get_property("formula", item.get_title())), 15, TEXT)
 	formula.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	content.add_child(formula)
-	var name := _label(item.get_title(), 11, MUTED)
-	name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	content.add_child(name)
+	var title_label := _label(item.get_title(), 11, MUTED)
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	content.add_child(title_label)
 	return card
+
 
 
 func _refresh_detail() -> void:
@@ -548,36 +549,52 @@ func _update_held_flask(item) -> void:
 		return
 	var chemical_name := str(item.get_property("formula", item.get_title()))
 	if _held_flask != null:
-		var current_body = _held_flask.get_node_or_null("RigidBody3D")
+		var current_body = _held_flask if _held_flask is RigidBody3D else _held_flask.get_node_or_null("RigidBody3D")
 		if current_body != null && current_body.chemical_name == chemical_name:
 			return
 	_clear_held_flask()
 	if _player_controller == null:
 		return
-	var hand = _player_controller.get_node_or_null("Head/Camera3D/hand")
-	if hand == null:
+		
+	var world_scene = get_tree().current_scene
+	if world_scene == null:
 		return
-	var flask := FlaskScene.instantiate()
-	flask.name = "HeldChemicalFlask"
-	var flask_body = flask.get_node_or_null("RigidBody3D")
+		
+	var flask_instance = FlaskScene.instantiate()
+	flask_instance.name = "HeldChemicalFlask"
+	
+	var flask_body: RigidBody3D = null
+	if flask_instance is RigidBody3D:
+		flask_body = flask_instance
+	else:
+		flask_body = flask_instance.get_node_or_null("RigidBody3D")
+		
 	if flask_body != null:
 		flask_body.chemical_name = chemical_name
-	hand.add_child(flask)
-	flask.position = Vector3(0.24, -0.22, 0.1)
-	flask.rotate_y(deg_to_rad(14.0))
-	flask.rotate_z(deg_to_rad(-16.0))
-	if flask_body != null:
-		flask_body.freeze = true
-		flask_body.collision_layer = 0
-		flask_body.collision_mask = 0
-		flask_body.set_physics_process(false)
-	_held_flask = flask
+		flask_body.freeze = false
+		flask_body.collision_layer = 1
+		flask_body.collision_mask = 1
+		flask_body.set_physics_process(true)
+		
+	world_scene.add_child(flask_instance)
+	_held_flask = flask_instance
+	
+	if flask_body != null and _player_controller.has_method("pick_target_object"):
+		_player_controller.call_deferred("pick_target_object", flask_body)
 
 
 func _clear_held_flask() -> void:
+	if _player_controller != null and _held_flask != null:
+		var current_body = _held_flask if _held_flask is RigidBody3D else _held_flask.get_node_or_null("RigidBody3D")
+		if current_body != null and _player_controller.picked_object == current_body:
+			_player_controller.remove_object()
 	if _held_flask != null:
-		_held_flask.queue_free()
+		if is_instance_valid(_held_flask) and _held_flask.is_inside_tree():
+			_held_flask.queue_free()
 		_held_flask = null
+
+
+
 
 
 func _restore_player_input() -> void:

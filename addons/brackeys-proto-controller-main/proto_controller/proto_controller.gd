@@ -32,8 +32,9 @@ var freeflying : bool = false
 
 var picked_object
 var pull_power = 10
-var rotation_power = 0.15
+@export var rotation_power : float = 0.1
 var locked = false
+
 var throw_power = 1.5
 
 # references
@@ -51,17 +52,17 @@ func _ready() -> void:
 	capture_mouse()
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Mouse look
-	if mouse_captured and event is InputEventMouseMotion and not locked:
-		rotate_look(event.relative)
-
 	# Rotate picked object
-	if Input.is_action_pressed("rclick"):
+	if picked_object and Input.is_action_pressed("rclick"):
 		locked = true
 		if event is InputEventMouseMotion:
 			rotate_picked_object(event.relative)
 	if Input.is_action_just_released("rclick"):
 		locked = false
+
+	# Mouse look
+	if mouse_captured and event is InputEventMouseMotion and not locked:
+		rotate_look(event.relative)
 
 	# Pickup / drop objects
 	if Input.is_action_just_pressed("pickup"):
@@ -149,20 +150,34 @@ func rotate_look(relative: Vector2):
 
 # pickup / drop
 func pick_object():
-	var collider = interaction.get_collider()
-	if collider and collider is RigidBody3D:
-		picked_object = collider
-		joint.set_node_b(picked_object.get_path())
+	var obj = interaction.get_collider()
+	if obj and obj is RigidBody3D:
+		pick_target_object(obj)
+
+func pick_target_object(obj: RigidBody3D) -> void:
+	if picked_object:
+		remove_object()
+	if is_instance_valid(obj) and obj.is_inside_tree():
+		picked_object = obj
+		staticbody.rotation = Vector3.ZERO
+		picked_object.global_transform.basis = hand.global_transform.basis
+		picked_object.global_position = hand.global_position
+		joint.node_b = picked_object.get_path()
 
 func remove_object():
 	if picked_object:
+		joint.node_b = NodePath("")
 		picked_object = null
-		joint.set_node_b(joint.get_path())
+		locked = false
 
 # rotate picked object
 func rotate_picked_object(relative: Vector2):
 	staticbody.rotate_x(deg_to_rad(relative.y * rotation_power))
 	staticbody.rotate_y(deg_to_rad(relative.x * rotation_power))
+
+
+
+
 
 # freefly toggles
 func enable_freefly():

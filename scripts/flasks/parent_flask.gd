@@ -60,8 +60,10 @@ func _physics_process(delta):
 		)
 
 func handle_flask(source_flask, source_material, source_particles, target_flask, target_material, delta):
-	var rot = source_flask.rotation_degrees
-	var is_tilted = abs(rot.x) > TILT_THRESHOLD or abs(rot.z) > TILT_THRESHOLD
+	var flask_up = source_flask.global_transform.basis.y.normalized()
+	var tilt_angle = rad_to_deg(flask_up.angle_to(Vector3.UP))
+	var is_tilted = tilt_angle > 50.0
+
 	
 	if is_tilted:
 		var current_height = source_material.get_shader_parameter("liquid_height")

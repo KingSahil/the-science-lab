@@ -1,11 +1,24 @@
 ---
 name: groq-godot-ai
-description: Manages Groq API integration with Gemma (Ollama) fallback, .env parsing, and SQLite chemistry caching in Godot 4.
+description: Manages Groq API integration with Gemma (Ollama) fallback, .env parsing, documentation checks, and SQLite chemistry caching in Godot 4.
 ---
 
 # Groq API + Gemma Fallback Skill for Godot 4
 
 This skill provides guidelines and patterns for implementing AI-driven features in Godot 4 using Groq API as primary model and Gemma (via Ollama) as local fallback.
+
+## Mandatory Workflow Rules
+
+1. **Check Latest Documentation First**:
+   - Before proposing solutions or writing GDScript/API code, always search and consult official documentation:
+     - **Godot 4 Engine Documentation**: [https://docs.godotengine.org/en/stable/](https://docs.godotengine.org/en/stable/)
+     - **Groq API Documentation**: [https://console.groq.com/docs/](https://console.groq.com/docs/)
+
+2. **Mandatory Headless Testing**:
+   - Always run the headless check before completing a task:
+     ```powershell
+     & "C:\Users\sahil\OneDrive\Desktop\Godot_v4.7.1.exe" --path . --headless --check-only
+     ```
 
 ## Key Features
 
