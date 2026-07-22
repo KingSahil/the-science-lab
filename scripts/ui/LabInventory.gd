@@ -576,11 +576,14 @@ func _update_held_flask(item) -> void:
 		flask_body.collision_mask = 1
 		flask_body.set_physics_process(true)
 		
-	world_scene.add_child(flask_instance)
 	_held_flask = flask_instance
+	flask_instance.tree_entered.connect(func():
+		if flask_body != null and is_instance_valid(_player_controller) and _player_controller.has_method("pick_target_object"):
+			_player_controller.call_deferred("pick_target_object", flask_body)
+	, CONNECT_ONE_SHOT)
 	
-	if flask_body != null and _player_controller.has_method("pick_target_object"):
-		_player_controller.call_deferred("pick_target_object", flask_body)
+	world_scene.add_child.call_deferred(flask_instance)
+
 
 
 func _clear_held_flask() -> void:
