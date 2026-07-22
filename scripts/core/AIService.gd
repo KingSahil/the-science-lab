@@ -7,7 +7,7 @@ const GROQ_MODEL = "llama-3.3-70b-versatile"
 
 # --- Gemma / Ollama Fallback Settings ---
 const OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
-const GEMMA_MODEL = "gemma3:4b"
+const GEMMA_MODEL = "gemma4:4b"
 
 # Optional API Key override (if empty, checks OS.get_environment("GROQ_API_KEY") or .env file)
 @export var groq_api_key: String = ""

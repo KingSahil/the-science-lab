@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://cbwdmabteofdt" path="res://scripts/liquids/LiquidWobble.gd" id="9_6iypd"]
 [ext_resource type="Texture2D" uid="uid://2dkc77khir7k" path="res://textures/crosshair001.png" id="10_6iypd"]
 [ext_resource type="Script" uid="uid://cfguqt035wx73" path="res://scripts/core/ReactionLabel.gd" id="10_cdqbm"]
+[ext_resource type="Script" path="res://scripts/ui/LabInventory.gd" id="11_inventory"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_jsk3o"]
 panorama = ExtResource("1_r3fl7")
@@ -351,6 +352,10 @@ transform = Transform3D(1, -2.35086e-08, 9.31323e-10, -2.3625e-08, 1, 9.31323e-1
 shape = SubResource("ConvexPolygonShape3D_tereu")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1137160131]
+
+[node name="LabInventory" type="CanvasLayer" parent="." unique_id=1473710202]
+layer = 20
+script = ExtResource("11_inventory")
 
 [node name="Control" type="Control" parent="CanvasLayer" unique_id=1851090030]
 layout_mode = 3

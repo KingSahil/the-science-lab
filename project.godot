@@ -51,7 +51,7 @@ AIService="*res://scripts/core/AIService.gd"
 
 [editor_plugins]
 
-enabled=PackedStringArray()
+enabled=PackedStringArray("res://addons/gloot/plugin.cfg")
 
 [global_group]
 
