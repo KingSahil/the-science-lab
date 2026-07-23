@@ -96,6 +96,71 @@ class LabItemIcon extends Control:
 			draw_circle(Vector2(size.x * 0.5, size.y * 0.84), size.x * 0.1, accent)
 
 
+class LabStorageGridArea extends ScrollContainer:
+	var inventory_script = null
+
+	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+		return data is Dictionary and data.get("source") == "quick_slot"
+
+	func _drop_data(_at_position: Vector2, data: Variant) -> void:
+		if data is Dictionary and data.get("source") == "quick_slot" and inventory_script != null:
+			inventory_script._unequip_slot(data.get("slot_index", -1))
+
+
+class LabItemCard extends Button:
+	var item = null
+	var inventory_script = null
+
+	func _get_drag_data(_at_position: Vector2) -> Variant:
+		if item == null or inventory_script == null:
+			return null
+		var preview = inventory_script._create_drag_preview(item)
+		set_drag_preview(preview)
+		return {
+			"source": "storage",
+			"item": item
+		}
+
+	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+		return data is Dictionary and data.get("source") == "quick_slot"
+
+	func _drop_data(_at_position: Vector2, data: Variant) -> void:
+		if data is Dictionary and data.get("source") == "quick_slot" and inventory_script != null:
+			inventory_script._unequip_slot(data.get("slot_index", -1))
+
+
+class LabSlotButton extends Button:
+	var slot_index: int = -1
+	var item = null
+	var inventory_script = null
+
+	func _get_drag_data(_at_position: Vector2) -> Variant:
+		if item == null or inventory_script == null:
+			return null
+		var preview = inventory_script._create_drag_preview(item)
+		set_drag_preview(preview)
+		return {
+			"source": "quick_slot",
+			"slot_index": slot_index,
+			"item": item
+		}
+
+	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+		if !(data is Dictionary):
+			return false
+		var src = data.get("source", "")
+		return src == "storage" or src == "quick_slot"
+
+	func _drop_data(_at_position: Vector2, data: Variant) -> void:
+		if !(data is Dictionary) or inventory_script == null:
+			return
+		var src = data.get("source", "")
+		if src == "storage":
+			inventory_script._equip_item_to_slot(data.get("item"), slot_index)
+		elif src == "quick_slot":
+			inventory_script._swap_quick_slots(data.get("slot_index", -1), slot_index)
+
+
 func _ready() -> void:
 	layer = 20
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -278,7 +343,8 @@ func _build_body(parent: Container) -> void:
 	var hint := _label("Click an item to inspect", 13, MUTED)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	grid_header.add_child(hint)
-	var scroll := ScrollContainer.new()
+	var scroll := LabStorageGridArea.new()
+	scroll.inventory_script = self
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inventory_column.add_child(scroll)
@@ -384,7 +450,9 @@ func _refresh_grid() -> void:
 
 
 func _make_item_card(item) -> Button:
-	var card := Button.new()
+	var card := LabItemCard.new()
+	card.item = item
+	card.inventory_script = self
 	card.custom_minimum_size = Vector2(132, 144)
 	card.tooltip_text = "%s\n%s" % [item.get_title(), item.get_property("description", "")]
 	var selected: bool = item == _selected_item
@@ -452,7 +520,10 @@ func _refresh_hotbar() -> void:
 
 
 func _make_slot_button(index: int, item, dimensions: Vector2) -> Button:
-	var button := Button.new()
+	var button := LabSlotButton.new()
+	button.slot_index = index
+	button.item = item
+	button.inventory_script = self
 	button.custom_minimum_size = dimensions
 	button.tooltip_text = "Slot %d" % (index + 1)
 	button.add_theme_font_size_override("font_size", 16)
@@ -492,22 +563,90 @@ func _equip_or_return_selected() -> void:
 		return
 	var equipped_index := _slot_index_for_item(_selected_item)
 	if equipped_index >= 0:
-		var returned_item = _quick_slots[equipped_index].get_item()
-		_quick_slots[equipped_index].clear()
-		_inventory.add_item(returned_item)
-		_selected_item = returned_item
-		if _active_slot == equipped_index:
-			_clear_held_flask()
+		_unequip_slot(equipped_index)
 	else:
-		var target_index := _target_slot_index()
-		var displaced_item = _quick_slots[target_index].get_item()
+		_equip_item_to_slot(_selected_item, _target_slot_index())
+
+
+func _equip_item_to_slot(item, target_slot_index: int) -> void:
+	if item == null or target_slot_index < 0 or target_slot_index >= _quick_slots.size():
+		return
+	var current_slot_idx := _slot_index_for_item(item)
+	var displaced_item = _quick_slots[target_slot_index].get_item()
+
+	if current_slot_idx == target_slot_index:
+		return
+
+	if current_slot_idx >= 0:
+		_quick_slots[current_slot_idx].clear()
+		_quick_slots[target_slot_index].clear()
+		if displaced_item != null and displaced_item != item:
+			_quick_slots[current_slot_idx].equip(displaced_item)
+		_quick_slots[target_slot_index].equip(item)
+	else:
 		if displaced_item != null:
-			_quick_slots[target_index].clear()
+			_quick_slots[target_slot_index].clear()
 			_inventory.add_item(displaced_item)
-		if _quick_slots[target_index].equip(_selected_item):
-			_active_slot = target_index
+		_quick_slots[target_slot_index].equip(item)
+
+	_active_slot = target_slot_index
+	_selected_item = item
 	_refresh_all()
 	_update_held_flask(_quick_slots[_active_slot].get_item())
+
+
+func _swap_quick_slots(from_index: int, to_index: int) -> void:
+	if from_index < 0 or from_index >= _quick_slots.size() or to_index < 0 or to_index >= _quick_slots.size():
+		return
+	if from_index == to_index:
+		return
+	var item_a = _quick_slots[from_index].get_item()
+	var item_b = _quick_slots[to_index].get_item()
+	_quick_slots[from_index].clear()
+	_quick_slots[to_index].clear()
+	if item_b != null:
+		_quick_slots[from_index].equip(item_b)
+	if item_a != null:
+		_quick_slots[to_index].equip(item_a)
+	_active_slot = to_index
+	if item_a != null:
+		_selected_item = item_a
+	_refresh_all()
+	_update_held_flask(_quick_slots[_active_slot].get_item())
+
+
+func _unequip_slot(slot_index: int) -> void:
+	if slot_index < 0 or slot_index >= _quick_slots.size():
+		return
+	var item = _quick_slots[slot_index].get_item()
+	if item == null:
+		return
+	_quick_slots[slot_index].clear()
+	_inventory.add_item(item)
+	if _active_slot == slot_index:
+		_clear_held_flask()
+	_selected_item = item
+	_refresh_all()
+
+
+func _create_drag_preview(item) -> Control:
+	var preview := PanelContainer.new()
+	preview.add_theme_stylebox_override("panel", _panel_style(Color(0.12, 0.16, 0.2, 0.9), BLUE, 2, 8))
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 8)
+	preview.add_child(hbox)
+
+	var icon := LabItemIcon.new()
+	icon.custom_minimum_size = Vector2(28, 28)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.set_item_data(str(item.get_property("kind", "chemical")), _item_color(item))
+	hbox.add_child(icon)
+
+	var label := _label(str(item.get_property("formula", item.get_title())), 14, TEXT)
+	hbox.add_child(label)
+
+	return preview
 
 
 func _target_slot_index() -> int:
