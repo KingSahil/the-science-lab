@@ -96,11 +96,25 @@ class LabItemIcon extends Control:
 			draw_circle(Vector2(size.x * 0.5, size.y * 0.84), size.x * 0.1, accent)
 
 
+class LabInventoryUI extends Control:
+	var inventory_script = null
+
+	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+		return data is Dictionary and data.has("source")
+
+	func _drop_data(_at_position: Vector2, data: Variant) -> void:
+		if !(data is Dictionary) or inventory_script == null:
+			return
+		var src = data.get("source", "")
+		if src == "quick_slot":
+			inventory_script._unequip_slot(data.get("slot_index", -1))
+
+
 class LabStorageGridArea extends ScrollContainer:
 	var inventory_script = null
 
 	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-		return data is Dictionary and data.get("source") == "quick_slot"
+		return data is Dictionary and data.has("source")
 
 	func _drop_data(_at_position: Vector2, data: Variant) -> void:
 		if data is Dictionary and data.get("source") == "quick_slot" and inventory_script != null:
@@ -122,11 +136,16 @@ class LabItemCard extends Button:
 		}
 
 	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-		return data is Dictionary and data.get("source") == "quick_slot"
+		return data is Dictionary and data.has("source")
 
 	func _drop_data(_at_position: Vector2, data: Variant) -> void:
-		if data is Dictionary and data.get("source") == "quick_slot" and inventory_script != null:
+		if !(data is Dictionary) or inventory_script == null:
+			return
+		var src = data.get("source", "")
+		if src == "quick_slot":
 			inventory_script._unequip_slot(data.get("slot_index", -1))
+		elif src == "storage" and data.get("item") != null:
+			inventory_script._select_item(data.get("item"))
 
 
 class LabSlotButton extends Button:
@@ -146,10 +165,7 @@ class LabSlotButton extends Button:
 		}
 
 	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-		if !(data is Dictionary):
-			return false
-		var src = data.get("source", "")
-		return src == "storage" or src == "quick_slot"
+		return data is Dictionary and data.has("source")
 
 	func _drop_data(_at_position: Vector2, data: Variant) -> void:
 		if !(data is Dictionary) or inventory_script == null:
@@ -211,10 +227,12 @@ func _create_inventory() -> void:
 
 func _build_ui() -> void:
 	_build_gameplay_hotbar()
-	_ui = Control.new()
-	_ui.name = "InventoryUI"
-	_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_ui.mouse_filter = Control.MOUSE_FILTER_STOP
+	var main_ui := LabInventoryUI.new()
+	main_ui.name = "InventoryUI"
+	main_ui.inventory_script = self
+	main_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	main_ui.mouse_filter = Control.MOUSE_FILTER_STOP
+	_ui = main_ui
 	add_child(_ui)
 
 	var dim := ColorRect.new()
