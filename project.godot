@@ -107,7 +107,6 @@ rclick={
 ]
 }
 
-
 [shader_globals]
 
 sgt_legacy_renderer={

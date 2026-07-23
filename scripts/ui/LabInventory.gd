@@ -41,6 +41,9 @@ class LabItemIcon extends Control:
 	var kind := "chemical"
 	var accent := Color("8bf4ff")
 
+	func _init() -> void:
+		mouse_filter = MOUSE_FILTER_IGNORE
+
 	func set_item_data(new_kind: String, new_accent: Color) -> void:
 		kind = new_kind
 		accent = new_accent
@@ -111,6 +114,7 @@ func _create_protoset() -> JSON:
 		"hcl": {"name": "Hydrochloric Acid", "formula": "HCl", "category": "Chemicals", "description": "A clear acid for controlled lab reactions.", "kind": "chemical", "accent": "#c8f1ff"},
 		"caso4": {"name": "Calcium Sulfate", "formula": "CaSO₄", "category": "Chemicals", "description": "A mineral reagent for precipitation tests.", "kind": "chemical", "accent": "#f4e8ad"},
 		"cuo": {"name": "Copper(II) Oxide", "formula": "CuO", "category": "Chemicals", "description": "A copper compound for heating experiments.", "kind": "chemical", "accent": "#d9a1ff"},
+		"cuso4": {"name": "Copper(II) Sulfate", "formula": "CuSO₄", "category": "Chemicals", "description": "A blue copper salt for precipitation reactions.", "kind": "chemical", "accent": "#4a90e2"},
 		"beaker": {"name": "Glass Beaker", "formula": "BEAKER", "category": "Equipment", "description": "Heat-safe vessel for mixing solutions.", "kind": "beaker", "accent": "#67dfff"},
 		"flask": {"name": "Erlenmeyer Flask", "formula": "FLASK", "category": "Equipment", "description": "Stable reaction flask for liquid experiments.", "kind": "flask", "accent": "#8beeff"},
 		"goggles": {"name": "Safety Goggles", "formula": "SAFETY", "category": "Equipment", "description": "Protective eyewear for active experiments.", "kind": "goggles", "accent": "#74c8ff"},
@@ -127,7 +131,7 @@ func _create_inventory() -> void:
 	_inventory.name = "ScienceInventory"
 	_inventory.protoset = _protoset
 	add_child(_inventory)
-	for prototype_id in ["naoh", "hcl", "caso4", "cuo", "beaker", "flask", "goggles", "stirrer", "lab_safety", "acid_base"]:
+	for prototype_id in ["naoh", "hcl", "caso4", "cuo", "cuso4", "beaker", "flask", "goggles", "stirrer", "lab_safety", "acid_base"]:
 		_inventory.create_and_add_item(prototype_id)
 	for index in 6:
 		var item_slot = ItemSlotScript.new()
@@ -398,14 +402,17 @@ func _make_item_card(item) -> Button:
 	var icon := LabItemIcon.new()
 	icon.custom_minimum_size = Vector2(0, 72)
 	icon.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.set_item_data(str(item.get_property("kind", "chemical")), _item_color(item))
 	content.add_child(icon)
 	var formula := _label(str(item.get_property("formula", item.get_title())), 15, TEXT)
 	formula.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	formula.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(formula)
 	var title_label := _label(item.get_title(), 11, MUTED)
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(title_label)
 	return card
 
@@ -642,6 +649,7 @@ func _label(value: String, font_size: int, color: Color) -> Label:
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
 
 
