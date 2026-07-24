@@ -1,5 +1,8 @@
 extends CharacterBody3D
 
+signal object_picked(obj: RigidBody3D)
+signal object_dropped(obj: RigidBody3D)
+
 # Movement toggles
 @export var can_move : bool = true
 @export var has_gravity : bool = true
@@ -163,12 +166,15 @@ func pick_target_object(obj: RigidBody3D) -> void:
 		picked_object.global_transform.basis = hand.global_transform.basis
 		picked_object.global_position = hand.global_position
 		joint.node_b = picked_object.get_path()
+		object_picked.emit(picked_object)
 
 func remove_object():
 	if picked_object:
 		joint.node_b = NodePath("")
+		var dropped_obj = picked_object
 		picked_object = null
 		locked = false
+		object_dropped.emit(dropped_obj)
 
 # rotate picked object
 func rotate_picked_object(relative: Vector2):
