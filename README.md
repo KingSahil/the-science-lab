@@ -41,8 +41,14 @@ the-science-lab/
 - First-person character controller
 - Chemistry database for reactions
 
+## Documentation
+
+- [System Architecture](file:///c:/Projects/the-science-lab/docs/ARCHITECTURE.md): Comprehensive guide on singletons, container physics, shader mechanics, LLM fallbacks, and SQLite caching.
+- [Agent & API Integration Guide](file:///c:/Projects/the-science-lab/docs/ANTIGRAVITY.md): Details on Groq API, Gemma Ollama fallback setup, and Antigravity workflow rules.
+
 ## Getting Started
 
 1. Open the project in Godot Engine 4.x
 2. Run the main scene: `scenes/main/node_3d.tscn`
 3. Use WASD to move and mouse to interact with flasks
+
