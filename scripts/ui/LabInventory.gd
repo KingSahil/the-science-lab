@@ -194,9 +194,11 @@ func _ready() -> void:
 	_create_inventory()
 	_build_ui()
 	_player_controller = get_parent().get_node_or_null("ProtoController")
-	if _player_controller != null and _player_controller.has_signal("object_dropped"):
-		if not _player_controller.object_dropped.is_connected(_on_player_object_dropped):
+	if _player_controller != null:
+		if _player_controller.has_signal("object_dropped") and not _player_controller.object_dropped.is_connected(_on_player_object_dropped):
 			_player_controller.object_dropped.connect(_on_player_object_dropped)
+		if _player_controller.has_signal("object_picked") and not _player_controller.object_picked.is_connected(_on_player_object_picked):
+			_player_controller.object_picked.connect(_on_player_object_picked)
 	_ui.hide()
 	_select_slot(_active_slot)
 
@@ -911,6 +913,17 @@ func _on_player_object_dropped(obj) -> void:
 			_held_flask = null
 
 
+func _on_player_object_picked(obj) -> void:
+	if obj != null:
+		if "chemical_name" in obj or obj.name.begins_with("HeldChemicalFlask") or (obj.get_parent() != null and obj.get_parent().name.begins_with("HeldChemicalFlask")):
+			var flask_node = obj
+			if not (obj is RigidBody3D) and obj.get_parent() != null:
+				flask_node = obj.get_parent()
+			elif obj.get_parent() != null and obj.get_parent().name.begins_with("HeldChemicalFlask"):
+				flask_node = obj.get_parent()
+			_held_flask = flask_node
+
+
 func _update_held_flask(item) -> void:
 	if item == null || str(item.get_property("category", "")) != "Chemicals":
 		_clear_held_flask()
@@ -923,9 +936,11 @@ func _update_held_flask(item) -> void:
 	_clear_held_flask()
 	if _player_controller == null:
 		_player_controller = get_parent().get_node_or_null("ProtoController")
-	if _player_controller != null and _player_controller.has_signal("object_dropped"):
-		if not _player_controller.object_dropped.is_connected(_on_player_object_dropped):
+	if _player_controller != null:
+		if _player_controller.has_signal("object_dropped") and not _player_controller.object_dropped.is_connected(_on_player_object_dropped):
 			_player_controller.object_dropped.connect(_on_player_object_dropped)
+		if _player_controller.has_signal("object_picked") and not _player_controller.object_picked.is_connected(_on_player_object_picked):
+			_player_controller.object_picked.connect(_on_player_object_picked)
 	if _player_controller == null:
 		return
 
@@ -968,14 +983,27 @@ func _update_held_flask(item) -> void:
 
 
 func _clear_held_flask() -> void:
-	if _player_controller != null and _held_flask != null:
-		var current_body = _held_flask if _held_flask is RigidBody3D else _held_flask.get_node_or_null("RigidBody3D")
+	if _held_flask == null and _player_controller != null and is_instance_valid(_player_controller.picked_object):
+		var picked = _player_controller.picked_object
+		if "chemical_name" in picked or picked.name.begins_with("HeldChemicalFlask") or (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")):
+			_held_flask = picked.get_parent() if (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")) else picked
+
+	if _held_flask == null:
+		if _player_controller != null and _player_controller.picked_object != null:
+			_player_controller.remove_object()
+		return
+
+	var flask_to_free = _held_flask
+	_held_flask = null
+	if _player_controller != null:
+		var current_body = flask_to_free if flask_to_free is RigidBody3D else flask_to_free.get_node_or_null("RigidBody3D")
 		if current_body != null and _player_controller.picked_object == current_body:
 			_player_controller.remove_object()
-	if _held_flask != null:
-		if is_instance_valid(_held_flask) and _held_flask.is_inside_tree():
-			_held_flask.queue_free()
-		_held_flask = null
+		elif _player_controller.picked_object == flask_to_free:
+			_player_controller.remove_object()
+
+	if is_instance_valid(flask_to_free) and flask_to_free.is_inside_tree():
+		flask_to_free.queue_free()
 
 
 
