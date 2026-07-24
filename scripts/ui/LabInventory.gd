@@ -601,11 +601,11 @@ Format MUST be:
 					if sql_cache and sql_cache.has_method("save_chemical_info"):
 						sql_cache.save_chemical_info(search_term, parsed)
 					
-					var item = _add_dynamic_chemical(parsed)
-					if item != null:
+					var new_chem_item = _add_dynamic_chemical(parsed)
+					if new_chem_item != null:
 						_set_category("Chemicals")
-						_select_item(item)
-						_update_ai_status("Generated '%s' via Groq AI & saved to SQLite!" % item.get_title())
+						_select_item(new_chem_item)
+						_update_ai_status("Generated '%s' via Groq AI & saved to SQLite!" % new_chem_item.get_title())
 						_refresh_grid()
 						return
 			
@@ -618,11 +618,11 @@ Format MUST be:
 			}
 			if sql_cache and sql_cache.has_method("save_chemical_info"):
 				sql_cache.save_chemical_info(search_term, fallback_dict)
-			var item = _add_dynamic_chemical(fallback_dict)
-			if item != null:
+			var fallback_item = _add_dynamic_chemical(fallback_dict)
+			if fallback_item != null:
 				_set_category("Chemicals")
-				_select_item(item)
-				_update_ai_status("Added '%s' (fallback) to inventory." % item.get_title())
+				_select_item(fallback_item)
+				_update_ai_status("Added '%s' (fallback) to inventory." % fallback_item.get_title())
 				_refresh_grid()
 		)
 	else:

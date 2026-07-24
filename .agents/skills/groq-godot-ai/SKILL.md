@@ -14,11 +14,16 @@ This skill provides guidelines and patterns for implementing AI-driven features 
      - **Godot 4 Engine Documentation**: [https://docs.godotengine.org/en/stable/](https://docs.godotengine.org/en/stable/)
      - **Groq API Documentation**: [https://console.groq.com/docs/](https://console.groq.com/docs/)
 
-2. **Mandatory Headless Testing**:
-   - Always run the headless check before completing a task:
+2. **Mandatory Headless & Console Error Testing**:
+   - Always verify GDScript syntax, engine console errors, and texture import validity before completing tasks:
      ```powershell
      & "C:\Users\sahil\OneDrive\Desktop\Godot_v4.7.1.exe" --path . --headless --check-only
      ```
+   - Run the console error check script:
+     ```powershell
+     powershell -ExecutionPolicy Bypass -File .agents/skills/groq-godot-ai/scripts/check_errors.ps1
+     ```
+   - Inspect console output logs to ensure zero resource load errors, C++ errors, invalid `.import` files (`valid=false`), or variable shadowing warnings exist before reporting results to the user.
 
 ## Key Features
 
