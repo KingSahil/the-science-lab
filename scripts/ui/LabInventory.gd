@@ -35,6 +35,10 @@ var _hotbar: HBoxContainer
 var _gameplay_hotbar: HBoxContainer
 var _tab_buttons: Dictionary = {}
 var _held_flask: Node3D
+var _ai_status_label: Label
+var _is_fetching_ai := false
+var _search_timer: Timer
+
 
 
 class LabItemIcon extends Control:
@@ -180,12 +184,19 @@ class LabSlotButton extends Button:
 func _ready() -> void:
 	layer = 20
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_search_timer = Timer.new()
+	_search_timer.one_shot = true
+	_search_timer.wait_time = 0.45
+	_search_timer.timeout.connect(_on_search_timer_timeout)
+	add_child(_search_timer)
+	
 	_protoset = _create_protoset()
 	_create_inventory()
 	_build_ui()
 	_player_controller = get_parent().get_node_or_null("ProtoController")
 	_ui.hide()
 	_select_slot(_active_slot)
+
 
 
 func _create_protoset() -> JSON:
@@ -214,6 +225,9 @@ func _create_inventory() -> void:
 	add_child(_inventory)
 	for prototype_id in ["naoh", "hcl", "caso4", "cuo", "cuso4", "beaker", "flask", "goggles", "stirrer", "lab_safety", "acid_base"]:
 		_inventory.create_and_add_item(prototype_id)
+	
+	_load_cached_chemicals_from_db()
+
 	for index in 6:
 		var item_slot = ItemSlotScript.new()
 		item_slot.name = "QuickSlot%d" % (index + 1)
@@ -223,6 +237,7 @@ func _create_inventory() -> void:
 	_quick_slots[0].equip(_inventory.get_item_with_prototype_id("hcl"))
 	_quick_slots[1].equip(_inventory.get_item_with_prototype_id("naoh"))
 	_selected_item = _quick_slots[0].get_item()
+
 
 
 func _build_ui() -> void:
@@ -323,7 +338,7 @@ func _build_toolbar(parent: Container) -> void:
 	toolbar.add_theme_constant_override("separation", 14)
 	parent.add_child(toolbar)
 	_search = LineEdit.new()
-	_search.placeholder_text = "Search compounds, equipment, manuals"
+	_search.placeholder_text = "Search any chemical (e.g. Caffeine, Acetone, Nitroglycerin)..."
 	_search.clear_button_enabled = true
 	_search.custom_minimum_size = Vector2(0, 43)
 	_search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -332,7 +347,8 @@ func _build_toolbar(parent: Container) -> void:
 	_search.add_theme_color_override("font_placeholder_color", MUTED)
 	_search.add_theme_stylebox_override("normal", _panel_style(Color("252c33"), BLUE, 1, 8))
 	_search.add_theme_stylebox_override("focus", _panel_style(Color("2c353e"), CYAN, 1, 8))
-	_search.text_changed.connect(func(_value: String): _refresh_grid())
+	_search.text_changed.connect(func(value: String): _on_search_text_changed(value))
+	_search.text_submitted.connect(func(query: String): _on_search_submitted(query))
 	toolbar.add_child(_search)
 	for category in ["Chemicals", "Equipment", "Manuals"]:
 		var tab := Button.new()
@@ -377,8 +393,15 @@ func _build_body(parent: Container) -> void:
 	grid_holder.add_child(_grid)
 	_empty_state = _label("No matching items in this category.", 16, MUTED)
 	_empty_state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_empty_state.custom_minimum_size = Vector2(0, 110)
+	_empty_state.custom_minimum_size = Vector2(0, 60)
 	grid_holder.add_child(_empty_state)
+
+	_ai_status_label = _label("", 13, CYAN)
+	_ai_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ai_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	grid_holder.add_child(_ai_status_label)
+
+
 
 	var detail := PanelContainer.new()
 	detail.custom_minimum_size = Vector2(285, 0)
@@ -465,6 +488,177 @@ func _refresh_grid() -> void:
 		_grid.add_child(_make_item_card(item))
 		displayed += 1
 	_empty_state.visible = displayed == 0
+
+
+func _on_search_text_changed(new_text: String) -> void:
+	_refresh_grid()
+	var term := new_text.strip_edges()
+	if _active_category == "Chemicals" and term.length() >= 2:
+		var found_local := false
+		for item in _inventory.get_items():
+			var haystack := "%s %s %s" % [item.get_title(), item.get_property("formula", ""), item.get_property("description", "")]
+			if haystack.to_lower().contains(term.to_lower()):
+				found_local = true
+				break
+				
+		if not found_local:
+			var sql_cache = get_node_or_null("/root/SQLCache")
+			if sql_cache and sql_cache.has_method("get_chemical_info"):
+				var cached_info = sql_cache.get_chemical_info(term)
+				if cached_info != null:
+					var item = _add_dynamic_chemical(cached_info)
+					if item != null:
+						_refresh_grid()
+					return
+					
+			_search_timer.start(0.45)
+
+
+func _on_search_timer_timeout() -> void:
+	var term := _search.text.strip_edges()
+	if term.length() >= 2 and _active_category == "Chemicals":
+		var found_local := false
+		for item in _inventory.get_items():
+			var haystack := "%s %s %s" % [item.get_title(), item.get_property("formula", ""), item.get_property("description", "")]
+			if haystack.to_lower().contains(term.to_lower()):
+				found_local = true
+				break
+		if not found_local:
+			_trigger_ai_chemical_lookup(term)
+
+
+func _on_search_submitted(query: String) -> void:
+	var search_term := query.strip_edges()
+	if search_term.is_empty():
+		return
+	if _active_category != "Chemicals":
+		_set_category("Chemicals")
+	
+	for item in _inventory.get_items():
+		if item.get_title().to_lower() == search_term.to_lower() or str(item.get_property("formula", "")).to_lower() == search_term.to_lower():
+			_select_item(item)
+			_refresh_grid()
+			return
+			
+	_trigger_ai_chemical_lookup(search_term)
+
+
+
+func _trigger_ai_chemical_lookup(search_term: String) -> void:
+	search_term = search_term.strip_edges()
+	if search_term.is_empty() or _is_fetching_ai:
+		return
+		
+	var sql_cache = get_node_or_null("/root/SQLCache")
+	if sql_cache and sql_cache.has_method("get_chemical_info"):
+		var cached_info = sql_cache.get_chemical_info(search_term)
+		if cached_info != null:
+			print("LabInventory: Found in SQLite cache -> ", search_term)
+			var item = _add_dynamic_chemical(cached_info)
+			if item != null:
+				_set_category("Chemicals")
+				_select_item(item)
+				_search.text = item.get_title()
+				_update_ai_status("Loaded '%s' from SQLite cache!" % item.get_title())
+				_refresh_grid()
+			return
+
+	_is_fetching_ai = true
+	_update_ai_status("Asking Groq AI for chemical details: '%s'..." % search_term)
+	
+	var prompt = """Act as an expert chemistry database. The user requested details about chemical/compound: "%s".
+Respond ONLY with a valid raw JSON object (no markdown, no backticks ```).
+Format MUST be:
+{
+  "name": "Full Name",
+  "formula": "Chemical Formula",
+  "description": "Short 1-2 sentence description.",
+  "color_name": "One word liquid color: clear, red, blue, green, yellow, purple, orange, black, brown, white",
+  "accent": "#hexcolor"
+}""" % search_term
+
+	var ai_service = get_node_or_null("/root/AIService")
+	if ai_service:
+		ai_service.request_ai(prompt, func(response_text: String, success: bool):
+			_is_fetching_ai = false
+			if success and not response_text.is_empty():
+				var clean_text := response_text.strip_edges()
+				if clean_text.begins_with("```json"):
+					clean_text = clean_text.substr(7)
+				if clean_text.begins_with("```"):
+					clean_text = clean_text.substr(3)
+				if clean_text.ends_with("```"):
+					clean_text = clean_text.substr(0, clean_text.length() - 3)
+				clean_text = clean_text.strip_edges()
+				
+				var parsed = JSON.parse_string(clean_text)
+				if parsed is Dictionary and parsed.has("name"):
+					if sql_cache and sql_cache.has_method("save_chemical_info"):
+						sql_cache.save_chemical_info(search_term, parsed)
+					
+					var item = _add_dynamic_chemical(parsed)
+					if item != null:
+						_set_category("Chemicals")
+						_select_item(item)
+						_update_ai_status("Generated '%s' via Groq AI & saved to SQLite!" % item.get_title())
+						_refresh_grid()
+						return
+			
+			var fallback_dict = {
+				"name": search_term.capitalize(),
+				"formula": search_term.to_upper().substr(0, 8),
+				"description": "Custom synthesized chemical compound.",
+				"color_name": "clear",
+				"accent": "#8bf4ff"
+			}
+			if sql_cache and sql_cache.has_method("save_chemical_info"):
+				sql_cache.save_chemical_info(search_term, fallback_dict)
+			var item = _add_dynamic_chemical(fallback_dict)
+			if item != null:
+				_set_category("Chemicals")
+				_select_item(item)
+				_update_ai_status("Added '%s' (fallback) to inventory." % item.get_title())
+				_refresh_grid()
+		)
+	else:
+		_is_fetching_ai = false
+		_update_ai_status("AIService autoload not found.")
+
+
+func _add_dynamic_chemical(chem_data: Dictionary) -> Variant:
+	var chem_name: String = str(chem_data.get("name", "Unknown Chemical")).strip_edges()
+	var chem_formula: String = str(chem_data.get("formula", "CHEM")).strip_edges()
+	
+	for existing in _inventory.get_items():
+		var ex_name = existing.get_title().to_lower()
+		var ex_formula = str(existing.get_property("formula", "")).to_lower()
+		if ex_name == chem_name.to_lower() or ex_formula == chem_formula.to_lower():
+			return existing
+
+	var item = _inventory.create_and_add_item("naoh")
+	if item != null:
+		item.set_property("name", chem_name)
+		item.set_property("formula", chem_formula)
+		item.set_property("description", str(chem_data.get("description", "A chemical compound.")))
+		item.set_property("category", "Chemicals")
+		item.set_property("kind", "chemical")
+		item.set_property("accent", str(chem_data.get("accent", "#8bf4ff")))
+		item.set_property("color_name", str(chem_data.get("color_name", "clear")))
+	return item
+
+
+func _load_cached_chemicals_from_db() -> void:
+	var sql_cache = get_node_or_null("/root/SQLCache")
+	if sql_cache and sql_cache.has_method("get_all_cached_chemicals"):
+		var cached_list = sql_cache.get_all_cached_chemicals()
+		for chem_data in cached_list:
+			_add_dynamic_chemical(chem_data)
+
+
+func _update_ai_status(msg: String) -> void:
+	if _ai_status_label:
+		_ai_status_label.text = msg
+
 
 
 func _make_item_card(item) -> Button:

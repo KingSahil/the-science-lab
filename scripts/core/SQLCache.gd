@@ -30,6 +30,19 @@ func _ready():
 	}
 	db.create_table("chemical_colors", color_table)
 
+	# 3. Table for UNLIMITED CHEMICAL CACHE
+	var chem_info_table = {
+		"chem_key": {"data_type": "text", "primary_key": true},
+		"name": {"data_type": "text"},
+		"formula": {"data_type": "text"},
+		"category": {"data_type": "text"},
+		"description": {"data_type": "text"},
+		"kind": {"data_type": "text"},
+		"accent": {"data_type": "text"},
+		"color_name": {"data_type": "text"}
+	}
+	db.create_table("chemical_info", chem_info_table)
+
 # --- REACTION LOGIC ---
 func save_reaction(chem_a, chem_b, product, color, effect, explanation=""):
 	if not db: return
@@ -54,7 +67,7 @@ func get_cached_reaction(chem_a, chem_b):
 		return db.query_result[0]
 	return null
 
-# --- NEW: COLOR LOGIC ---
+# --- COLOR LOGIC ---
 func save_chemical_color(chem_name, color_name):
 	if not db: return
 	# Create dictionary for insert
@@ -65,7 +78,42 @@ func save_chemical_color(chem_name, color_name):
 
 func get_chemical_color(chem_name):
 	if not db: return null
-	db.query("SELECT color_name FROM chemical_colors WHERE name = '" + chem_name + "'")
+	db.query("SELECT color_name FROM chemical_colors WHERE name = '" + chem_name.replace("'", "''") + "'")
 	if db.query_result.size() > 0:
 		return db.query_result[0]["color_name"]
 	return null
+
+# --- DYNAMIC CHEMICAL DEFINITIONS CACHE ---
+func save_chemical_info(chem_key: String, chem_data: Dictionary) -> void:
+	if not db: return
+	var clean_key = chem_key.strip_edges().to_lower()
+	var data = {
+		"chem_key": clean_key,
+		"name": str(chem_data.get("name", chem_key.capitalize())),
+		"formula": str(chem_data.get("formula", chem_key.to_upper())),
+		"category": "Chemicals",
+		"description": str(chem_data.get("description", "A chemical compound.")),
+		"kind": "chemical",
+		"accent": str(chem_data.get("accent", "#8bf4ff")),
+		"color_name": str(chem_data.get("color_name", "clear"))
+	}
+	db.insert_row("chemical_info", data)
+	save_chemical_color(data["name"], data["color_name"])
+	save_chemical_color(data["formula"], data["color_name"])
+	save_chemical_color(clean_key, data["color_name"])
+	print("SQLCache: Saved Chemical Info to SQLite -> ", data["name"], " (", data["formula"], ")")
+
+func get_chemical_info(search_term: String) -> Variant:
+	if not db: return null
+	var term = search_term.strip_edges().to_lower().replace("'", "''")
+	if term.is_empty(): return null
+	db.query("SELECT * FROM chemical_info WHERE chem_key = '" + term + "' OR LOWER(name) = '" + term + "' OR LOWER(formula) = '" + term + "'")
+	if db.query_result.size() > 0:
+		return db.query_result[0]
+	return null
+
+func get_all_cached_chemicals() -> Array:
+	if not db: return []
+	db.query("SELECT * FROM chemical_info")
+	return db.query_result
+
