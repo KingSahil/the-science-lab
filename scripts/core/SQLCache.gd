@@ -43,6 +43,7 @@ func _ready():
 	}
 	db.create_table("chemical_info", chem_info_table)
 	clear_stale_explanations()
+	remove_invalid_cached_chemicals()
 
 # --- REACTION LOGIC ---
 func save_reaction(chem_a, chem_b, product, color, effect, explanation=""):
@@ -82,6 +83,11 @@ func clear_stale_explanations() -> void:
 	db.query("UPDATE reactions SET explanation = '' WHERE explanation NOT LIKE '%VISUAL%' AND explanation NOT LIKE '%DIAGRAM%'")
 	print("SQLCache: Cleared stale reaction explanations.")
 
+func remove_invalid_cached_chemicals() -> void:
+	if not db: return
+	db.query("DELETE FROM chemical_info WHERE LOWER(name) LIKE '%not available%' OR LOWER(formula) LIKE '%not available%' OR LOWER(chem_key) LIKE '%not available%' OR LOWER(description) LIKE '%does not correspond%' OR LOWER(name) LIKE '%niggi%' OR LOWER(chem_key) LIKE '%niggi%' OR LOWER(chem_key) LIKE '%nigg%'")
+	print("SQLCache: Purged invalid 'Not Available' and hallucinatory records from SQLite chemical cache.")
+
 
 # --- COLOR LOGIC ---
 func save_chemical_color(chem_name, color_name):
@@ -103,12 +109,20 @@ func get_chemical_color(chem_name):
 func save_chemical_info(chem_key: String, chem_data: Dictionary) -> void:
 	if not db: return
 	var clean_key = chem_key.strip_edges().to_lower()
+	var name_val := str(chem_data.get("name", chem_key.capitalize())).strip_edges()
+	var formula_val := str(chem_data.get("formula", chem_key.to_upper())).strip_edges()
+	var desc_val := str(chem_data.get("description", "A chemical compound.")).strip_edges()
+	
+	if name_val.to_lower() == "not available" or formula_val.to_lower() == "not available" or name_val.to_lower().contains("not available") or "does not correspond to a known chemical" in desc_val.to_lower():
+		print("SQLCache: Blocked saving 'Not Available' to SQLite for ", clean_key)
+		return
+
 	var data = {
 		"chem_key": clean_key,
-		"name": str(chem_data.get("name", chem_key.capitalize())),
-		"formula": str(chem_data.get("formula", chem_key.to_upper())),
+		"name": name_val,
+		"formula": formula_val,
 		"category": "Chemicals",
-		"description": str(chem_data.get("description", "A chemical compound.")),
+		"description": desc_val,
 		"kind": "chemical",
 		"accent": str(chem_data.get("accent", "#8bf4ff")),
 		"color_name": str(chem_data.get("color_name", "clear"))

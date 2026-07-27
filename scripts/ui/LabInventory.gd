@@ -25,6 +25,7 @@ var _ui: Control
 var _search: LineEdit
 var _grid: GridContainer
 var _empty_state: Label
+var _storage_header: Label
 var _detail_icon
 var _detail_name: Label
 var _detail_formula: Label
@@ -228,7 +229,7 @@ func _create_inventory() -> void:
 	_inventory.name = "ScienceInventory"
 	_inventory.protoset = _protoset
 	add_child(_inventory)
-	for prototype_id in ["naoh", "hcl", "caso4", "cuo", "cuso4", "beaker", "flask", "goggles", "stirrer", "lab_safety", "acid_base"]:
+	for prototype_id in ["naoh", "hcl", "caso4", "cuo", "cuso4"]:
 		_inventory.create_and_add_item(prototype_id)
 	
 	_load_cached_chemicals_from_db()
@@ -376,9 +377,9 @@ func _build_body(parent: Container) -> void:
 	body.add_child(inventory_column)
 	var grid_header := HBoxContainer.new()
 	inventory_column.add_child(grid_header)
-	var storage := _label("CHEMICAL STORAGE", 15, TEXT)
-	storage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	grid_header.add_child(storage)
+	_storage_header = _label("CHEMICAL STORAGE", 15, TEXT)
+	_storage_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid_header.add_child(_storage_header)
 	var hint := _label("Click an item to inspect", 13, MUTED)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	grid_header.add_child(hint)
@@ -483,6 +484,22 @@ func _refresh_tabs() -> void:
 func _refresh_grid() -> void:
 	for child in _grid.get_children():
 		child.queue_free()
+		
+	if _storage_header != null:
+		if _active_category == "Chemicals":
+			_storage_header.text = "CHEMICAL STORAGE"
+		elif _active_category == "Equipment":
+			_storage_header.text = "EQUIPMENT STORAGE"
+		elif _active_category == "Manuals":
+			_storage_header.text = "MANUALS & GUIDES"
+
+	if _active_category != "Chemicals":
+		_empty_state.text = "🚧 COMING SOON 🚧\n%s features will be available in an upcoming update." % _active_category.to_upper()
+		_empty_state.visible = true
+		if _ai_status_label != null:
+			_ai_status_label.visible = false
+		return
+
 	var search := _search.text.strip_edges().to_lower()
 	var displayed := 0
 	for item in _inventory.get_items():
@@ -492,7 +509,12 @@ func _refresh_grid() -> void:
 			continue
 		_grid.add_child(_make_item_card(item))
 		displayed += 1
-	_empty_state.visible = displayed == 0
+
+	if displayed == 0:
+		_empty_state.text = "No matching chemicals found."
+		_empty_state.visible = true
+	else:
+		_empty_state.visible = false
 
 
 func _on_search_text_changed(new_text: String) -> void:
@@ -571,16 +593,27 @@ func _trigger_ai_chemical_lookup(search_term: String) -> void:
 	_is_fetching_ai = true
 	_update_ai_status("Asking Groq AI for chemical details: '%s'..." % search_term)
 	
-	var prompt = """Act as an expert chemistry database. The user requested details about chemical/compound: "%s".
-Respond ONLY with a valid raw JSON object (no markdown, no backticks ```).
-Format MUST be:
+	var prompt = """Act as a strict scientific chemistry database. Verify if "%s" is a REAL, scientifically recognized chemical compound, element, or valid IUPAC/common chemical name.
+
+DO NOT HALLUCINATE OR INVENT FAKE CHEMICALS FOR SLANG, MISSPELLED WORDS, OR NON-CHEMICAL TERMS.
+
+If "%s" is NOT a real recognized chemical compound or element, respond ONLY with:
 {
-  "name": "Full Name",
+  "name": "Not Available",
+  "formula": "Not Available",
+  "description": "The query does not correspond to a valid real chemical compound.",
+  "color_name": "clear",
+  "accent": "#8bf4ff"
+}
+
+If "%s" IS a real scientific chemical compound or element, respond ONLY with valid raw JSON:
+{
+  "name": "Full Scientific Name",
   "formula": "Chemical Formula",
   "description": "Short 1-2 sentence description.",
   "color_name": "One word liquid color: clear, red, blue, green, yellow, purple, orange, black, brown, white",
   "accent": "#hexcolor"
-}""" % search_term
+}""" % [search_term, search_term, search_term]
 
 	var ai_service = get_node_or_null("/root/AIService")
 	if ai_service:
@@ -598,6 +631,19 @@ Format MUST be:
 				
 				var parsed = JSON.parse_string(clean_text)
 				if parsed is Dictionary and parsed.has("name"):
+					var c_name := str(parsed.get("name", "")).strip_edges()
+					var c_formula := str(parsed.get("formula", "")).strip_edges()
+					var c_desc := str(parsed.get("description", "")).strip_edges()
+					
+					var n_low := c_name.to_lower()
+					var f_low := c_formula.to_lower()
+					var d_low := c_desc.to_lower()
+					
+					if n_low == "not available" or f_low == "not available" or n_low.contains("not available") or "does not correspond" in d_low or "not a valid" in d_low:
+						_update_ai_status("❌ '%s' is not a valid chemical compound or element." % search_term)
+						_refresh_grid()
+						return
+
 					if sql_cache and sql_cache.has_method("save_chemical_info"):
 						sql_cache.save_chemical_info(search_term, parsed)
 					
@@ -609,21 +655,8 @@ Format MUST be:
 						_refresh_grid()
 						return
 			
-			var fallback_dict = {
-				"name": search_term.capitalize(),
-				"formula": search_term.to_upper().substr(0, 8),
-				"description": "Custom synthesized chemical compound.",
-				"color_name": "clear",
-				"accent": "#8bf4ff"
-			}
-			if sql_cache and sql_cache.has_method("save_chemical_info"):
-				sql_cache.save_chemical_info(search_term, fallback_dict)
-			var fallback_item = _add_dynamic_chemical(fallback_dict)
-			if fallback_item != null:
-				_set_category("Chemicals")
-				_select_item(fallback_item)
-				_update_ai_status("Added '%s' (fallback) to inventory." % fallback_item.get_title())
-				_refresh_grid()
+			_update_ai_status("❌ Could not find a valid chemical matching '%s'." % search_term)
+			_refresh_grid()
 		)
 	else:
 		_is_fetching_ai = false
@@ -633,18 +666,27 @@ Format MUST be:
 func _add_dynamic_chemical(chem_data: Dictionary) -> Variant:
 	var chem_name: String = str(chem_data.get("name", "Unknown Chemical")).strip_edges()
 	var chem_formula: String = str(chem_data.get("formula", "CHEM")).strip_edges()
+	var chem_desc: String = str(chem_data.get("description", "")).strip_edges()
+	
+	var n_low := chem_name.to_lower()
+	var f_low := chem_formula.to_lower()
+	var d_low := chem_desc.to_lower()
+	
+	if n_low == "not available" or f_low == "not available" or n_low.contains("not available") or "does not correspond" in d_low:
+		print("LabInventory: Refusing to create item for 'Not Available' -> ", chem_name)
+		return null
 	
 	for existing in _inventory.get_items():
 		var ex_name = existing.get_title().to_lower()
 		var ex_formula = str(existing.get_property("formula", "")).to_lower()
-		if ex_name == chem_name.to_lower() or ex_formula == chem_formula.to_lower():
+		if ex_name == n_low or ex_formula == f_low:
 			return existing
 
 	var item = _inventory.create_and_add_item("naoh")
 	if item != null:
 		item.set_property("name", chem_name)
 		item.set_property("formula", chem_formula)
-		item.set_property("description", str(chem_data.get("description", "A chemical compound.")))
+		item.set_property("description", chem_desc)
 		item.set_property("category", "Chemicals")
 		item.set_property("kind", "chemical")
 		item.set_property("accent", str(chem_data.get("accent", "#8bf4ff")))
@@ -704,10 +746,20 @@ func _make_item_card(item) -> Button:
 
 
 func _refresh_detail() -> void:
+	if _active_category != "Chemicals":
+		_detail_name.text = _active_category.to_upper()
+		_detail_formula.text = "COMING SOON"
+		_detail_description.text = "The %s section is under active development. Interactive %s features will be unlocked in a future lab update!" % [_active_category.capitalize(), _active_category.to_lower()]
+		_detail_quantity.text = ""
+		_detail_icon.set_item_data("chemical", Color("4d5963"))
+		_equip_button.disabled = true
+		_equip_button.text = "COMING SOON"
+		return
+
 	if _selected_item == null:
 		_detail_name.text = "Select an item"
 		_detail_formula.text = ""
-		_detail_description.text = "Choose a chemical, equipment item, or manual from your field kit."
+		_detail_description.text = "Choose a chemical reagent from your laboratory storage."
 		_detail_quantity.text = ""
 		_detail_icon.set_item_data("chemical", BLUE)
 		_equip_button.disabled = true
@@ -763,16 +815,19 @@ func _select_item(item) -> void:
 func _select_slot(index: int) -> void:
 	_active_slot = index
 	var item = _quick_slots[index].get_item()
-	_selected_item = item
-	_refresh_detail()
+	if item != null and _active_category == "Chemicals":
+		_selected_item = item
 	_refresh_hotbar()
-	_update_held_flask(item)
+	_refresh_detail()
 
 
 func _set_category(category: String) -> void:
 	_active_category = category
+	if _active_category != "Chemicals":
+		_selected_item = null
 	_refresh_tabs()
 	_refresh_grid()
+	_refresh_detail()
 
 
 func _equip_or_return_selected() -> void:
