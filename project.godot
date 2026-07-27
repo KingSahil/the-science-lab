@@ -43,18 +43,18 @@ run/main_scene="uid://bis2s0d1bt7fa"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+SimpleGrass="*res://addons/simplegrasstextured/singleton.tscn"
+SQLCache="*uid://7fp0kyqqxm3r"
+AIService="*res://scripts/core/AIService.gd"
+
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-
-[autoload]
-
-SimpleGrass="*res://addons/simplegrasstextured/singleton.tscn"
-SQLCache="*uid://7fp0kyqqxm3r"
-AIService="*res://scripts/core/AIService.gd"
 
 [editor_plugins]
 

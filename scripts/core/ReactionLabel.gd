@@ -2,7 +2,7 @@ extends Label
 
 # --- CONFIGURATION ---
 const OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
-const MODEL_NAME = "gemma3:4b" 
+const MODEL_NAME = "gemma4:4b"
 
 @onready var http_request: HTTPRequest = $HTTPRequest
 @onready var equation_request: HTTPRequest = $EquationRequest
@@ -12,7 +12,7 @@ const MODEL_NAME = "gemma3:4b"
 @onready var close_button: Button = $DetailPanel/CloseButton
 
 var current_chemicals = ""
-var target_flask = null 
+var target_flask = null
 var current_explanation_cache = "" # Stores explanation if loaded from DB
 
 func _ready():
@@ -52,13 +52,14 @@ func _setup_panel_style() -> void:
 	if not detail_panel:
 		return
 
-	# Make detail_panel top level so it anchors to full CanvasLayer screen instead of parent Label 67px height
+	# Make detail_panel top level so it anchors to full CanvasLayer screen instead of parent Label height
 	detail_panel.top_level = true
+	detail_panel.clip_contents = true
 	detail_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	detail_panel.anchor_left = 0.15
-	detail_panel.anchor_top = 0.12
-	detail_panel.anchor_right = 0.85
-	detail_panel.anchor_bottom = 0.88
+	detail_panel.anchor_left = 0.14
+	detail_panel.anchor_top = 0.10
+	detail_panel.anchor_right = 0.86
+	detail_panel.anchor_bottom = 0.90
 	detail_panel.offset_left = 0
 	detail_panel.offset_top = 0
 	detail_panel.offset_right = 0
@@ -75,10 +76,10 @@ func _setup_panel_style() -> void:
 	if map_tex != null:
 		var style := StyleBoxTexture.new()
 		style.texture = map_tex
-		style.content_margin_left = 45
-		style.content_margin_right = 45
-		style.content_margin_top = 45
-		style.content_margin_bottom = 45
+		style.content_margin_left = 50
+		style.content_margin_right = 50
+		style.content_margin_top = 50
+		style.content_margin_bottom = 50
 		detail_panel.add_theme_stylebox_override("panel", style)
 	else:
 		var style := StyleBoxFlat.new()
@@ -95,10 +96,10 @@ func _setup_panel_style() -> void:
 	# RichTextLabel layout and ink text styling inside Parchment Map
 	if detail_text:
 		detail_text.set_anchors_preset(Control.PRESET_FULL_RECT)
-		detail_text.anchor_left = 0.12
-		detail_text.anchor_top = 0.10
-		detail_text.anchor_right = 0.88
-		detail_text.anchor_bottom = 0.82
+		detail_text.anchor_left = 0.14
+		detail_text.anchor_top = 0.13
+		detail_text.anchor_right = 0.84
+		detail_text.anchor_bottom = 0.79
 		detail_text.offset_left = 0
 		detail_text.offset_top = 0
 		detail_text.offset_right = 0
@@ -106,7 +107,9 @@ func _setup_panel_style() -> void:
 		detail_text.bbcode_enabled = true
 		detail_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		detail_text.fit_content = false
+		detail_text.scroll_active = true
 		detail_text.scroll_following = false
+		detail_text.clip_contents = true
 		detail_text.add_theme_color_override("default_color", Color("1a0c04"))
 		detail_text.add_theme_font_size_override("normal_font_size", 18)
 		detail_text.add_theme_font_size_override("bold_font_size", 20)
@@ -115,10 +118,10 @@ func _setup_panel_style() -> void:
 	if close_button:
 		close_button.text = "✖ CLOSE ALCHEMY MAP"
 		close_button.set_anchors_preset(Control.PRESET_FULL_RECT)
-		close_button.anchor_left = 0.58
-		close_button.anchor_top = 0.83
-		close_button.anchor_right = 0.88
-		close_button.anchor_bottom = 0.92
+		close_button.anchor_left = 0.56
+		close_button.anchor_top = 0.82
+		close_button.anchor_right = 0.84
+		close_button.anchor_bottom = 0.90
 		close_button.offset_left = 0
 		close_button.offset_top = 0
 		close_button.offset_right = 0
@@ -233,38 +236,49 @@ func _input(event):
 func fetch_learn_more():
 	text = "Consulting AI Alchemist..."
 	
-	var prompt = """Explain the chemical reaction %s for a student simply and clearly.
+	var prompt = """Provide a detailed chemical reaction analysis for: %s
+
+Format your response under these EXACT section titles:
 
 EQUATION:
-[Balanced chemical equation]
+[Balanced chemical equation with physical state symbols (s, l, g, aq) and compound IUPAC names]
 
-REACTION TYPE & ENERGY:
-- Type: [Reaction type]
-- Energy: [Exothermic or Endothermic]
+REACTION TYPE & THERMODYNAMICS:
+- Type: [Classification e.g. Acid-Base Neutralization, Ring-Opening Nucleophilic Addition, Redox, Synthesis, etc.]
+- Enthalpy: [Exothermic or Endothermic with brief thermal description]
 
-KEY SCIENCE:
-[2 simple sentences explaining why the reaction occurs]
+KEY SCIENTIFIC MECHANISM:
+[Comprehensive explanation of bond breaking, electron/proton exchange, molecular interactions, and intermediate species]
 
-OBSERVATIONS & SAFETY:
-- Visuals: [Color change, gas, precipitate, or temperature]
-- Safety: [Key safety precaution]
+LAB OBSERVATIONS & SAFETY:
+- Visuals: [Observable visual cues such as color changes, gas evolution/bubbles, precipitation, or heat release]
+- Safety & PPE: [Crucial handling precautions, required protective equipment, toxicity, flammability, or fume warnings]
+
+REAL-WORLD APPLICATIONS & ALCHEMY:
+[Industrial applications, natural occurrences, biological significance, or alchemical context of these chemicals]
 """ % current_chemicals
 	
 	var ai_node = get_node_or_null("/root/AIService")
 	if ai_node:
 		ai_node.request_ai(prompt, func(response_text: String, success: bool):
 			if success and response_text != "":
+				current_explanation_cache = response_text
 				show_detail_panel(response_text)
+				
+				if has_node("/root/SQLCache"):
+					var parts = current_chemicals.split("+")
+					if parts.size() >= 2:
+						get_node("/root/SQLCache").update_reaction_explanation(parts[0].strip_edges(), parts[1].strip_edges(), response_text)
 			else:
 				detail_text.text = "Error fetching explanation."
 				detail_panel.visible = true
-		, 0.2, 60)
+		, 0.2, 600)
 
 
 func show_detail_panel(content: String):
 	detail_text.text = _format_funky_bbcode(content)
 	detail_panel.visible = true
-	text = "" 
+	text = ""
 	print("Detail Panel Opened!")
 
 
@@ -275,22 +289,28 @@ func _format_funky_bbcode(text_content: String) -> String:
 	result = result.replace("### ", "").replace("## ", "").replace("# ", "")
 	
 	# Add prominent centered header title
-	var formatted = "[center][font_size=26][b][color=#5c1d00]📜 ALCHEMY REACTION RECORD[/color][/b][/font_size][/center]\n\n"
+	var formatted = "[center][font_size=24][b][color=#5c1d00]📜 ALCHEMY REACTION RECORD[/color][/b][/font_size][/center]\n\n"
 	
 	# Format section headers with bold funky colors
-	result = result.replace("EQUATION:", "[font_size=22][b][color=#7a0000]📜 BALANCED CHEMICAL EQUATION[/color][/b][/font_size]")
-	result = result.replace("REACTION TYPE & ENERGY:", "[font_size=22][b][color=#4a1500]⚡ REACTION CLASSIFICATION & ENERGY[/color][/b][/font_size]")
-	result = result.replace("REACTION CLASSIFICATION & THERMODYNAMICS:", "[font_size=22][b][color=#4a1500]⚡ REACTION CLASSIFICATION & ENERGY[/color][/b][/font_size]")
-	result = result.replace("KEY SCIENCE:", "[font_size=22][b][color=#0f380f]🔬 KEY SCIENTIFIC MECHANISM[/color][/b][/font_size]")
-	result = result.replace("KEY SCIENTIFIC MECHANISM:", "[font_size=22][b][color=#0f380f]🔬 KEY SCIENTIFIC MECHANISM[/color][/b][/font_size]")
-	result = result.replace("OBSERVATIONS & SAFETY:", "[font_size=22][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
-	result = result.replace("LABORATORY OBSERVATIONS & SAFETY:", "[font_size=22][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
+	result = result.replace("EQUATION:", "[font_size=20][b][color=#7a0000]📜 BALANCED CHEMICAL EQUATION[/color][/b][/font_size]")
+	result = result.replace("REACTION TYPE & ENERGY:", "[font_size=20][b][color=#4a1500]⚡ REACTION CLASSIFICATION & THERMODYNAMICS[/color][/b][/font_size]")
+	result = result.replace("REACTION TYPE & THERMODYNAMICS:", "[font_size=20][b][color=#4a1500]⚡ REACTION CLASSIFICATION & THERMODYNAMICS[/color][/b][/font_size]")
+	result = result.replace("REACTION CLASSIFICATION & THERMODYNAMICS:", "[font_size=20][b][color=#4a1500]⚡ REACTION CLASSIFICATION & THERMODYNAMICS[/color][/b][/font_size]")
+	result = result.replace("KEY SCIENCE:", "[font_size=20][b][color=#0f380f]🔬 KEY SCIENTIFIC MECHANISM[/color][/b][/font_size]")
+	result = result.replace("KEY SCIENTIFIC MECHANISM:", "[font_size=20][b][color=#0f380f]🔬 KEY SCIENTIFIC MECHANISM[/color][/b][/font_size]")
+	result = result.replace("OBSERVATIONS & SAFETY:", "[font_size=20][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
+	result = result.replace("LAB OBSERVATIONS & SAFETY:", "[font_size=20][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
+	result = result.replace("LABORATORY OBSERVATIONS & SAFETY:", "[font_size=20][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
+	result = result.replace("REAL-WORLD APPLICATIONS & ALCHEMY:", "[font_size=20][b][color=#2b4c10]💡 REAL-WORLD APPLICATIONS & ALCHEMY[/color][/b][/font_size]")
+	result = result.replace("REAL-WORLD APPLICATIONS:", "[font_size=20][b][color=#2b4c10]💡 REAL-WORLD APPLICATIONS & ALCHEMY[/color][/b][/font_size]")
 
 	# Format bold inline labels
 	result = result.replace("**", "")
 	result = result.replace("Type:", "[color=#4a1500][b]Type:[/b][/color]")
+	result = result.replace("Enthalpy:", "[color=#7a0000][b]Enthalpy:[/b][/color]")
 	result = result.replace("Energy:", "[color=#7a0000][b]Energy:[/b][/color]")
 	result = result.replace("Visuals:", "[color=#0f380f][b]Visuals:[/b][/color]")
+	result = result.replace("Safety & PPE:", "[color=#5c1d00][b]Safety & PPE:[/b][/color]")
 	result = result.replace("Safety:", "[color=#5c1d00][b]Safety:[/b][/color]")
 
 	return formatted + result

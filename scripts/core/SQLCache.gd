@@ -67,6 +67,16 @@ func get_cached_reaction(chem_a, chem_b):
 		return db.query_result[0]
 	return null
 
+func update_reaction_explanation(chem_a: String, chem_b: String, explanation: String) -> void:
+	if not db: return
+	var ingredients = [chem_a, chem_b]
+	ingredients.sort()
+	var key = ingredients[0] + "+" + ingredients[1]
+	
+	db.query("UPDATE reactions SET explanation = '" + explanation.replace("'", "''") + "' WHERE chemicals_key = '" + key + "'")
+	print("SQLCache: Updated explanation in SQLite for ", key)
+
+
 # --- COLOR LOGIC ---
 func save_chemical_color(chem_name, color_name):
 	if not db: return
