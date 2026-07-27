@@ -42,6 +42,7 @@ func _ready():
 		"color_name": {"data_type": "text"}
 	}
 	db.create_table("chemical_info", chem_info_table)
+	clear_stale_explanations()
 
 # --- REACTION LOGIC ---
 func save_reaction(chem_a, chem_b, product, color, effect, explanation=""):
@@ -75,6 +76,11 @@ func update_reaction_explanation(chem_a: String, chem_b: String, explanation: St
 	
 	db.query("UPDATE reactions SET explanation = '" + explanation.replace("'", "''") + "' WHERE chemicals_key = '" + key + "'")
 	print("SQLCache: Updated explanation in SQLite for ", key)
+
+func clear_stale_explanations() -> void:
+	if not db: return
+	db.query("UPDATE reactions SET explanation = '' WHERE explanation NOT LIKE '%VISUAL%' AND explanation NOT LIKE '%DIAGRAM%'")
+	print("SQLCache: Cleared stale reaction explanations.")
 
 
 # --- COLOR LOGIC ---

@@ -271,7 +271,7 @@ func update_ui_from_data(product, color, effect):
 func _input(event):
 	if visible and detail_panel and not detail_panel.visible:
 		if event is InputEventKey and event.pressed and event.keycode == KEY_H:
-			if current_explanation_cache != "":
+			if current_explanation_cache != "" and ("VISUAL" in current_explanation_cache or "DIAGRAM" in current_explanation_cache):
 				print("Showing Cached Explanation")
 				show_detail_panel(current_explanation_cache)
 			else:
@@ -281,26 +281,41 @@ func _input(event):
 func fetch_learn_more():
 	text = "Consulting AI Alchemist..."
 	
-	var prompt = """Provide a detailed chemical reaction analysis for: %s
+	var prompt = """Explain the chemical reaction %s for a beginner chemistry student.
+
+CRITICAL FORMATTING RULES:
+1. DO NOT WRITE DENSE PARAGRAPHS. Write strictly concise single lines (one sentence per line with a bullet point '- ').
+2. Use SUPER SIMPLE beginner-friendly language with fun analogies (e.g. 'like magnet attraction', 'swapping dance partners').
+3. Include an easy-to-read ASCII art diagram showing what happens to the molecules visually!
 
 Format your response under these EXACT section titles:
 
 EQUATION:
-[Balanced chemical equation with physical state symbols (s, l, g, aq) and compound IUPAC names]
+- Formula: [Balanced chemical equation with common names in parentheses]
 
-REACTION TYPE & THERMODYNAMICS:
-- Type: [Classification e.g. Acid-Base Neutralization, Ring-Opening Nucleophilic Addition, Redox, Synthesis, etc.]
-- Enthalpy: [Exothermic or Endothermic with brief thermal description]
+VISUAL REACTION DIAGRAM:
+[Easy-to-understand ASCII text diagram using arrows and boxes, e.g.:
+[Molecule A] + [Molecule B] ---> [Product C] + [Product D]
+      |               |
+      v               v
+  (Bond Breaks)   (New Bond Forms)
+]
 
-KEY SCIENTIFIC MECHANISM:
-[Comprehensive explanation of bond breaking, electron/proton exchange, molecular interactions, and intermediate species]
+REACTION TYPE & HEAT:
+- Type: [Simple reaction classification e.g. Acid + Base Neutralization, Synthesis, Decomposition]
+- Energy: [Simple explanation of whether it gets HOT (Exothermic) or COLD (Endothermic)]
+
+HOW IT WORKS (STEP-BY-STEP):
+- Step 1: [Short single-line step with simple analogy]
+- Step 2: [Short single-line step explaining bond breaking/forming]
+- Step 3: [Short single-line step showing the final stable result]
 
 LAB OBSERVATIONS & SAFETY:
-- Visuals: [Observable visual cues such as color changes, gas evolution/bubbles, precipitation, or heat release]
-- Safety & PPE: [Crucial handling precautions, required protective equipment, toxicity, flammability, or fume warnings]
+- Visuals: [What you see with your eyes: Bubbles, color shift, heat, or precipitate]
+- Safety: [Crucial safety rule in 1 simple line]
 
-REAL-WORLD APPLICATIONS & ALCHEMY:
-[Industrial applications, natural occurrences, biological significance, or alchemical context of these chemicals]
+FUN FACT & REAL WORLD:
+- Uses: [1 fun real-world example of where this reaction occurs]
 """ % current_chemicals
 	
 	var ai_node = get_node_or_null("/root/AIService")
@@ -338,25 +353,30 @@ func _format_funky_bbcode(text_content: String) -> String:
 	
 	# Format section headers with bold funky colors
 	result = result.replace("EQUATION:", "[font_size=20][b][color=#7a0000]📜 BALANCED CHEMICAL EQUATION[/color][/b][/font_size]")
-	result = result.replace("REACTION TYPE & ENERGY:", "[font_size=20][b][color=#4a1500]⚡ REACTION CLASSIFICATION & THERMODYNAMICS[/color][/b][/font_size]")
-	result = result.replace("REACTION TYPE & THERMODYNAMICS:", "[font_size=20][b][color=#4a1500]⚡ REACTION CLASSIFICATION & THERMODYNAMICS[/color][/b][/font_size]")
-	result = result.replace("REACTION CLASSIFICATION & THERMODYNAMICS:", "[font_size=20][b][color=#4a1500]⚡ REACTION CLASSIFICATION & THERMODYNAMICS[/color][/b][/font_size]")
-	result = result.replace("KEY SCIENCE:", "[font_size=20][b][color=#0f380f]🔬 KEY SCIENTIFIC MECHANISM[/color][/b][/font_size]")
-	result = result.replace("KEY SCIENTIFIC MECHANISM:", "[font_size=20][b][color=#0f380f]🔬 KEY SCIENTIFIC MECHANISM[/color][/b][/font_size]")
-	result = result.replace("OBSERVATIONS & SAFETY:", "[font_size=20][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
+	result = result.replace("VISUAL REACTION DIAGRAM:", "[font_size=20][b][color=#5c1d00]🎨 VISUAL REACTION DIAGRAM[/color][/b][/font_size]")
+	result = result.replace("REACTION TYPE & HEAT:", "[font_size=20][b][color=#4a1500]⚡ REACTION TYPE & HEAT[/color][/b][/font_size]")
+	result = result.replace("REACTION TYPE & ENERGY:", "[font_size=20][b][color=#4a1500]⚡ REACTION TYPE & HEAT[/color][/b][/font_size]")
+	result = result.replace("REACTION TYPE & THERMODYNAMICS:", "[font_size=20][b][color=#4a1500]⚡ REACTION TYPE & HEAT[/color][/b][/font_size]")
+	result = result.replace("HOW IT WORKS (STEP-BY-STEP):", "[font_size=20][b][color=#0f380f]🔬 HOW IT WORKS (STEP-BY-STEP)[/color][/b][/font_size]")
+	result = result.replace("KEY SCIENTIFIC MECHANISM:", "[font_size=20][b][color=#0f380f]🔬 HOW IT WORKS (STEP-BY-STEP)[/color][/b][/font_size]")
 	result = result.replace("LAB OBSERVATIONS & SAFETY:", "[font_size=20][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
-	result = result.replace("LABORATORY OBSERVATIONS & SAFETY:", "[font_size=20][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
-	result = result.replace("REAL-WORLD APPLICATIONS & ALCHEMY:", "[font_size=20][b][color=#2b4c10]💡 REAL-WORLD APPLICATIONS & ALCHEMY[/color][/b][/font_size]")
-	result = result.replace("REAL-WORLD APPLICATIONS:", "[font_size=20][b][color=#2b4c10]💡 REAL-WORLD APPLICATIONS & ALCHEMY[/color][/b][/font_size]")
+	result = result.replace("WHAT YOU SEE & SAFETY:", "[font_size=20][b][color=#5c1d00]👁️ LAB OBSERVATIONS & SAFETY[/color][/b][/font_size]")
+	result = result.replace("FUN FACT & REAL WORLD:", "[font_size=20][b][color=#2b4c10]💡 FUN FACT & REAL-WORLD USE[/color][/b][/font_size]")
+	result = result.replace("REAL-WORLD APPLICATIONS & ALCHEMY:", "[font_size=20][b][color=#2b4c10]💡 FUN FACT & REAL-WORLD USE[/color][/b][/font_size]")
 
 	# Format bold inline labels
 	result = result.replace("**", "")
+	result = result.replace("Formula:", "[color=#7a0000][b]Formula:[/b][/color]")
 	result = result.replace("Type:", "[color=#4a1500][b]Type:[/b][/color]")
-	result = result.replace("Enthalpy:", "[color=#7a0000][b]Enthalpy:[/b][/color]")
 	result = result.replace("Energy:", "[color=#7a0000][b]Energy:[/b][/color]")
+	result = result.replace("Heat:", "[color=#7a0000][b]Heat:[/b][/color]")
+	result = result.replace("Step 1:", "[color=#0f380f][b]Step 1:[/b][/color]")
+	result = result.replace("Step 2:", "[color=#0f380f][b]Step 2:[/b][/color]")
+	result = result.replace("Step 3:", "[color=#0f380f][b]Step 3:[/b][/color]")
 	result = result.replace("Visuals:", "[color=#0f380f][b]Visuals:[/b][/color]")
-	result = result.replace("Safety & PPE:", "[color=#5c1d00][b]Safety & PPE:[/b][/color]")
 	result = result.replace("Safety:", "[color=#5c1d00][b]Safety:[/b][/color]")
+	result = result.replace("Uses:", "[color=#2b4c10][b]Uses:[/b][/color]")
+	result = result.replace("Fact:", "[color=#2b4c10][b]Fact:[/b][/color]")
 
 	return formatted + result
 
