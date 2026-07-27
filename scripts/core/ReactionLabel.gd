@@ -98,7 +98,7 @@ func _setup_panel_style() -> void:
 		detail_text.set_anchors_preset(Control.PRESET_FULL_RECT)
 		detail_text.anchor_left = 0.14
 		detail_text.anchor_top = 0.13
-		detail_text.anchor_right = 0.84
+		detail_text.anchor_right = 0.855
 		detail_text.anchor_bottom = 0.79
 		detail_text.offset_left = 0
 		detail_text.offset_top = 0
@@ -113,6 +113,51 @@ func _setup_panel_style() -> void:
 		detail_text.add_theme_color_override("default_color", Color("1a0c04"))
 		detail_text.add_theme_font_size_override("normal_font_size", 18)
 		detail_text.add_theme_font_size_override("bold_font_size", 20)
+
+		# Custom Gamified Curved Parchment Scrollbar Styling
+		var v_scroll: VScrollBar = detail_text.get_v_scroll_bar()
+		if v_scroll:
+			v_scroll.custom_minimum_size.x = 14
+			
+			# 1. Track / Channel Style
+			var track_style := StyleBoxFlat.new()
+			track_style.bg_color = Color("381f10a8") # Warm translucent dark leather
+			track_style.border_color = Color("5c3316")
+			track_style.set_border_width_all(2)
+			track_style.set_corner_radius_all(7)
+			track_style.content_margin_left = 2
+			track_style.content_margin_right = 2
+			v_scroll.add_theme_stylebox_override("scroll", track_style)
+			
+			# 2. Grabber / Thumb Style (Normal)
+			var grabber_style := StyleBoxFlat.new()
+			grabber_style.bg_color = Color("7a3e19") # Parchment leather brown
+			grabber_style.border_color = Color("c78a3b") # Gamified gold/bronze trim
+			grabber_style.set_border_width_all(2)
+			grabber_style.set_corner_radius_all(9) # Curved gamified capsule shape
+			v_scroll.add_theme_stylebox_override("grabber", grabber_style)
+			
+			# 3. Grabber Hover State
+			var grabber_hover := StyleBoxFlat.new()
+			grabber_hover.bg_color = Color("9e521d") # Bright warm amber glow
+			grabber_hover.border_color = Color("e3aa52") # Bright gold trim
+			grabber_hover.set_border_width_all(2)
+			grabber_hover.set_corner_radius_all(9)
+			v_scroll.add_theme_stylebox_override("grabber_highlight", grabber_hover)
+			
+			# 4. Grabber Pressed State
+			var grabber_pressed := StyleBoxFlat.new()
+			grabber_pressed.bg_color = Color("5c2a0c") # Deep mahogany
+			grabber_pressed.border_color = Color("a86e28")
+			grabber_pressed.set_border_width_all(2)
+			grabber_pressed.set_corner_radius_all(9)
+			v_scroll.add_theme_stylebox_override("grabber_pressed", grabber_pressed)
+			
+			# Also set v_scrollbar theme overrides directly on RichTextLabel as fallback
+			detail_text.add_theme_stylebox_override("v_scrollbar_scroll", track_style)
+			detail_text.add_theme_stylebox_override("v_scrollbar_grabber", grabber_style)
+			detail_text.add_theme_stylebox_override("v_scrollbar_grabber_highlight", grabber_hover)
+			detail_text.add_theme_stylebox_override("v_scrollbar_grabber_pressed", grabber_pressed)
 
 	# Close Button styling inside Parchment Map
 	if close_button:
