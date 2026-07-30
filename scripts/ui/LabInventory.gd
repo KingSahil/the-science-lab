@@ -152,6 +152,16 @@ class LabItemCard extends Button:
 		elif src == "storage" and data.get("item") != null:
 			inventory_script._select_item(data.get("item"))
 
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.double_click and event.pressed:
+			if item != null and inventory_script != null:
+				var slot_idx = inventory_script._slot_index_for_item(item)
+				if slot_idx >= 0:
+					inventory_script._select_slot(slot_idx)
+				else:
+					inventory_script._equip_item_to_slot(item, inventory_script._target_slot_index())
+				accept_event()
+
 
 class LabSlotButton extends Button:
 	var slot_index: int = -1
@@ -808,17 +818,25 @@ func _make_slot_button(index: int, item, dimensions: Vector2) -> Button:
 
 func _select_item(item) -> void:
 	_selected_item = item
+	var slot_index := _slot_index_for_item(item)
+	if slot_index >= 0:
+		_active_slot = slot_index
+		_update_held_flask(item)
 	_refresh_grid()
 	_refresh_detail()
+	_refresh_hotbar()
 
 
 func _select_slot(index: int) -> void:
+	if index < 0 or index >= _quick_slots.size():
+		return
 	_active_slot = index
 	var item = _quick_slots[index].get_item()
 	if item != null and _active_category == "Chemicals":
 		_selected_item = item
 	_refresh_hotbar()
 	_refresh_detail()
+	_update_held_flask(item)
 
 
 func _set_category(category: String) -> void:
@@ -984,9 +1002,9 @@ func _update_held_flask(item) -> void:
 		_clear_held_flask()
 		return
 	var chemical_name := str(item.get_property("formula", item.get_title()))
-	if _held_flask != null:
+	if is_instance_valid(_held_flask):
 		var current_body = _held_flask if _held_flask is RigidBody3D else _held_flask.get_node_or_null("RigidBody3D")
-		if current_body != null && current_body.chemical_name == chemical_name:
+		if is_instance_valid(current_body) and "chemical_name" in current_body and current_body.chemical_name == chemical_name:
 			return
 	_clear_held_flask()
 	if _player_controller == null:
@@ -999,7 +1017,7 @@ func _update_held_flask(item) -> void:
 	if _player_controller == null:
 		return
 
-	if _player_controller.picked_object != null:
+	if is_instance_valid(_player_controller.picked_object):
 		_player_controller.remove_object()
 		
 	var world_scene = get_tree().current_scene
@@ -1029,8 +1047,9 @@ func _update_held_flask(item) -> void:
 	, CONNECT_ONE_SHOT)
 
 	flask_instance.tree_entered.connect(func():
-		if flask_body != null and is_instance_valid(_player_controller) and _player_controller.has_method("pick_target_object"):
-			_player_controller.call_deferred("pick_target_object", flask_body)
+		if is_instance_valid(flask_body) and is_instance_valid(_player_controller) and _player_controller.has_method("pick_target_object"):
+			if _held_flask == flask_instance:
+				_player_controller.call_deferred("pick_target_object", flask_body)
 	, CONNECT_ONE_SHOT)
 	
 	world_scene.add_child.call_deferred(flask_instance)
@@ -1038,14 +1057,17 @@ func _update_held_flask(item) -> void:
 
 
 func _clear_held_flask() -> void:
-	if _held_flask == null and _player_controller != null and is_instance_valid(_player_controller.picked_object):
+	if not is_instance_valid(_held_flask) and _player_controller != null and is_instance_valid(_player_controller.picked_object):
 		var picked = _player_controller.picked_object
 		if "chemical_name" in picked or picked.name.begins_with("HeldChemicalFlask") or (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")):
 			_held_flask = picked.get_parent() if (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")) else picked
 
-	if _held_flask == null:
-		if _player_controller != null and _player_controller.picked_object != null:
-			_player_controller.remove_object()
+	if not is_instance_valid(_held_flask):
+		_held_flask = null
+		if _player_controller != null and is_instance_valid(_player_controller.picked_object):
+			var picked = _player_controller.picked_object
+			if "chemical_name" in picked or picked.name.begins_with("HeldChemicalFlask") or (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")):
+				_player_controller.remove_object()
 		return
 
 	var flask_to_free = _held_flask
@@ -1075,6 +1097,19 @@ func _restore_player_input() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		if !_ui.visible:
+			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				var prev_slot := (_active_slot - 1 + _quick_slots.size()) % _quick_slots.size()
+				_select_slot(prev_slot)
+				get_viewport().set_input_as_handled()
+				return
+			elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				var next_slot := (_active_slot + 1) % _quick_slots.size()
+				_select_slot(next_slot)
+				get_viewport().set_input_as_handled()
+				return
+
 	if !(event is InputEventKey) || !event.pressed || event.echo:
 		return
 	if event.ctrl_pressed && event.keycode == KEY_K:
@@ -1093,7 +1128,7 @@ func _input(event: InputEvent) -> void:
 		_close_inventory()
 		get_viewport().set_input_as_handled()
 		return
-	if !_ui.visible && !event.ctrl_pressed && !event.alt_pressed && !event.meta_pressed:
+	if !(_ui.visible && _search.has_focus()) && !event.ctrl_pressed && !event.alt_pressed && !event.meta_pressed:
 		var hotkey: int = int(event.keycode) - int(KEY_1)
 		if hotkey >= 0 && hotkey < _quick_slots.size():
 			_select_slot(hotkey)
