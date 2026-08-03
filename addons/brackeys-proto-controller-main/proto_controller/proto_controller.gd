@@ -163,7 +163,8 @@ func pick_target_object(obj: RigidBody3D) -> void:
 	if is_instance_valid(obj) and obj.is_inside_tree():
 		picked_object = obj
 		staticbody.rotation = Vector3.ZERO
-		picked_object.global_transform.basis = hand.global_transform.basis
+		var current_scale := obj.global_transform.basis.get_scale()
+		picked_object.global_transform.basis = hand.global_transform.basis.scaled(current_scale)
 		picked_object.global_position = hand.global_position
 		joint.node_b = picked_object.get_path()
 		object_picked.emit(picked_object)

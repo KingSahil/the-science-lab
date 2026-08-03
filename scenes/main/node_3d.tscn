@@ -458,7 +458,7 @@ layer = 20
 script = ExtResource("11_inventory")
 
 [node name="flasks" type="Node3D" parent="." unique_id=1222794006]
-transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0.0918065, 2.37193, -0.150406)
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0.0918065, 2.37193, -0.150406)
 
 [node name="flask2" parent="flasks" unique_id=1456876853 instance=ExtResource("8_tereu")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.73065, -0.0281587, 0.214866)

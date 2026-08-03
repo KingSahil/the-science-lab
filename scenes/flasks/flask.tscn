@@ -55,7 +55,7 @@ shader_parameter/rim_emission_intensity = 0.2
 shader_parameter/rim_exponent = 3.0
 shader_parameter/emission_intensity = 0.05
 shader_parameter/liquid_surface_gradient_size = 3.0
-shader_parameter/wobble = Vector2(0.00057959656, 0.00034849436)
+shader_parameter/wobble = Vector2(0, 0)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jx2jx"]
 
@@ -120,14 +120,14 @@ rings = 352
 is_hemisphere = true
 
 [node name="flask" type="Node3D" unique_id=1573110037]
-transform = Transform3D(0.5, 0, 0, 0, -0.5, 7.54979e-08, 0, -7.54979e-08, -0.5, 0, 0, 0)
+transform = Transform3D(1, 0, 0, 0, -1, 8.74228e-08, 0, -8.74228e-08, -1, 0, 0, 0)
 
 [node name="RigidBody3D" type="RigidBody3D" parent="." unique_id=280270605]
 script = ExtResource("1_c7anl")
 chemical_name = "HCl"
 
 [node name="lab_erlenmeyer_a_0" type="MeshInstance3D" parent="RigidBody3D" unique_id=1004685312]
-transform = Transform3D(0.0809978, -0.000136841, -0.000587163, 0.000587214, 2.96553e-05, 0.0809979, -0.000136623, -0.0809999, 3.06467e-05, 0.00700557, 0.0135591, 0.0105451)
+transform = Transform3D(0.055, -9.29e-05, -0.000398, 0.000398, 2.01e-05, 0.055, -9.28e-05, -0.055, 2.07e-05, 0.0047, 0.0092, 0.0072)
 mesh = SubResource("ArrayMesh_rqnki")
 skeleton = NodePath("")
 
@@ -139,7 +139,7 @@ skeleton = NodePath("")
 script = ExtResource("3_c7anl")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D" unique_id=1352303248]
-transform = Transform3D(0.081, 1.08002e-12, 0, 5.82076e-11, -3.54339e-09, 0.081, 8.65441e-12, -0.081, -3.53975e-09, 0.00700557, 0.0135591, 0.0105451)
+transform = Transform3D(0.055, 7.34e-13, 0, 3.95e-11, -2.4e-09, 0.055, 5.88e-12, -0.055, -2.4e-09, 0.0047, 0.0092, 0.0072)
 visible = false
 shape = SubResource("ConvexPolygonShape3D_ro5ub")
 

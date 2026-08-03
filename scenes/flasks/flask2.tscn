@@ -127,7 +127,7 @@ script = ExtResource("1_u4vhm")
 chemical_name = "NaOH"
 
 [node name="lab_erlenmeyer_a_0" type="MeshInstance3D" parent="RigidBody3D" unique_id=257976369]
-transform = Transform3D(0.0809978, -0.000136841, -0.000587163, 0.000587214, 2.96553e-05, 0.0809979, -0.000136623, -0.0809999, 3.06467e-05, 0.00700557, 0.0135591, 0.0105451)
+transform = Transform3D(0.055, -9.29e-05, -0.000398, 0.000398, 2.01e-05, 0.055, -9.28e-05, -0.055, 2.07e-05, 0.0047, 0.0092, 0.0072)
 mesh = SubResource("ArrayMesh_rqnki")
 skeleton = NodePath("")
 
@@ -139,7 +139,7 @@ skeleton = NodePath("")
 script = ExtResource("4_u4vhm")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D" unique_id=933479476]
-transform = Transform3D(0.081, 1.08002e-12, 0, 5.82076e-11, -3.54339e-09, 0.081, 8.65441e-12, -0.081, -3.53975e-09, 0.00700557, 0.0135591, 0.0105451)
+transform = Transform3D(0.055, 7.34e-13, 0, 3.95e-11, -2.4e-09, 0.055, 5.88e-12, -0.055, -2.4e-09, 0.0047, 0.0092, 0.0072)
 visible = false
 shape = SubResource("ConvexPolygonShape3D_ro5ub")
 
