@@ -98,12 +98,16 @@ points = PackedVector3Array(-0.00102043, -5.22983, -6.83502, -1.34837, -5.05351,
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_c7anl"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_n4nnm"]
+particle_flag_align_y = true
 emission_shape = 2
 emission_sphere_radius = 0.1
-spread = 0.0
-turbulence_noise_strength = 0.0
-turbulence_noise_scale = 0.0
-turbulence_noise_speed_random = 1.25
+direction = Vector3(0, -1, 0)
+spread = 15.0
+initial_velocity_min = 0.5
+initial_velocity_max = 1.5
+gravity = Vector3(0, -9.8, 0)
+scale_min = 0.5
+scale_max = 1.0
 
 [sub_resource type="ORMMaterial3D" id="ORMMaterial3D_c7anl"]
 transparency = 1
@@ -153,8 +157,9 @@ process_material = SubResource("ParticleProcessMaterial_c7anl")
 
 [node name="GPUParticles3D" type="GPUParticles3D" parent="RigidBody3D" unique_id=1930145283]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00484008, 0.596725, 0.0135165)
+local_coords = false
 speed_scale = 1.24
-randomness = 1.0
+randomness = 0.5
 fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_n4nnm")
 draw_pass_1 = SubResource("SphereMesh_rqnki")
