@@ -284,10 +284,10 @@ func _build_ui() -> void:
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_top", 16)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_bottom", 16)
+	margin.add_theme_constant_override("margin_left", 32)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_right", 32)
+	margin.add_theme_constant_override("margin_bottom", 24)
 	_ui.add_child(margin)
 
 	var terminal := PanelContainer.new()
@@ -300,20 +300,20 @@ func _build_ui() -> void:
 	if map_tex != null:
 		var style := StyleBoxTexture.new()
 		style.texture = map_tex
-		style.content_margin_left = 70
-		style.content_margin_right = 70
-		style.content_margin_top = 65
-		style.content_margin_bottom = 55
+		style.content_margin_left = 135
+		style.content_margin_right = 135
+		style.content_margin_top = 85
+		style.content_margin_bottom = 85
 		terminal.add_theme_stylebox_override("panel", style)
 	else:
 		terminal.add_theme_stylebox_override("panel", _panel_style(MAP_PARCHMENT, MAP_MAHOGANY, 4, 14))
 	margin.add_child(terminal)
 
 	var inner := MarginContainer.new()
-	inner.add_theme_constant_override("margin_left", 12)
-	inner.add_theme_constant_override("margin_top", 10)
-	inner.add_theme_constant_override("margin_right", 12)
-	inner.add_theme_constant_override("margin_bottom", 10)
+	inner.add_theme_constant_override("margin_left", 16)
+	inner.add_theme_constant_override("margin_top", 12)
+	inner.add_theme_constant_override("margin_right", 16)
+	inner.add_theme_constant_override("margin_bottom", 12)
 	terminal.add_child(inner)
 
 	var layout := VBoxContainer.new()
