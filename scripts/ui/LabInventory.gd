@@ -4,12 +4,22 @@ const InventoryScript = preload("res://addons/gloot/core/inventory.gd")
 const ItemSlotScript = preload("res://addons/gloot/core/item_slot.gd")
 const FlaskScene = preload("res://scenes/flasks/flask.tscn")
 
-const NAVY := Color("1c2228")
-const NAVY_LIGHT := Color("29323b")
-const BLUE := Color("70808d")
-const CYAN := Color("d8e0e6")
-const TEXT := Color("f3f5f6")
-const MUTED := Color("afb8c0")
+const MAP_MAHOGANY   := Color("3b1d0c")
+const MAP_LEATHER    := Color("5c2a0c")
+const MAP_GOLD       := Color("c78a3b")
+const MAP_GOLD_BRIGHT:= Color("e3aa52")
+const MAP_INK_DARK   := Color("1a0c04")
+const MAP_INK_HEADER := Color("4a1700")
+const MAP_MUTED      := Color("4a2810")
+const MAP_CREAM      := Color("fff5ea")
+const MAP_PARCHMENT  := Color("d6b88a")
+
+const NAVY := MAP_MAHOGANY
+const NAVY_LIGHT := MAP_LEATHER
+const BLUE := MAP_GOLD
+const CYAN := MAP_INK_HEADER
+const TEXT := MAP_INK_DARK
+const MUTED := MAP_MUTED
 
 var _inventory
 var _protoset: JSON
@@ -56,7 +66,7 @@ class LabItemIcon extends Control:
 
 	func _draw() -> void:
 		var center := size * 0.5
-		var line := Color("dff8ff")
+		var line := MAP_MAHOGANY
 		if kind == "chemical":
 			var neck := Rect2(center.x - size.x * 0.11, size.y * 0.08, size.x * 0.22, size.y * 0.28)
 			var body := PackedVector2Array([
@@ -267,32 +277,47 @@ func _build_ui() -> void:
 	add_child(_ui)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0.03, 0.04, 0.05, 0.58)
+	dim.color = Color(0.06, 0.03, 0.01, 0.62)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	_ui.add_child(dim)
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 72)
-	margin.add_theme_constant_override("margin_top", 48)
-	margin.add_theme_constant_override("margin_right", 72)
-	margin.add_theme_constant_override("margin_bottom", 48)
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 16)
 	_ui.add_child(margin)
 
 	var terminal := PanelContainer.new()
-	terminal.add_theme_stylebox_override("panel", _panel_style(NAVY, BLUE, 2, 24))
+	var map_tex = null
+	if ResourceLoader.exists("res://textures/parchment_map.png"):
+		map_tex = ResourceLoader.load("res://textures/parchment_map.png")
+	elif ResourceLoader.exists("res://textures/image.png"):
+		map_tex = ResourceLoader.load("res://textures/image.png")
+		
+	if map_tex != null:
+		var style := StyleBoxTexture.new()
+		style.texture = map_tex
+		style.content_margin_left = 70
+		style.content_margin_right = 70
+		style.content_margin_top = 65
+		style.content_margin_bottom = 55
+		terminal.add_theme_stylebox_override("panel", style)
+	else:
+		terminal.add_theme_stylebox_override("panel", _panel_style(MAP_PARCHMENT, MAP_MAHOGANY, 4, 14))
 	margin.add_child(terminal)
 
 	var inner := MarginContainer.new()
-	inner.add_theme_constant_override("margin_left", 28)
-	inner.add_theme_constant_override("margin_top", 23)
-	inner.add_theme_constant_override("margin_right", 28)
-	inner.add_theme_constant_override("margin_bottom", 20)
+	inner.add_theme_constant_override("margin_left", 12)
+	inner.add_theme_constant_override("margin_top", 10)
+	inner.add_theme_constant_override("margin_right", 12)
+	inner.add_theme_constant_override("margin_bottom", 10)
 	terminal.add_child(inner)
 
 	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 14)
+	layout.add_theme_constant_override("separation", 12)
 	inner.add_child(layout)
 	_build_header(layout)
 	_build_toolbar(layout)
@@ -319,7 +344,7 @@ func _build_gameplay_hotbar() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_PASS
 	hud.add_child(center)
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _panel_style(Color(0.08, 0.1, 0.12, 0.84), Color("45515b"), 1, 10))
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("2c150bb8"), MAP_GOLD, 2, 10))
 	center.add_child(panel)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
@@ -335,16 +360,16 @@ func _build_gameplay_hotbar() -> void:
 func _build_header(parent: Container) -> void:
 	var header := HBoxContainer.new()
 	parent.add_child(header)
-	var title := _label("FIELD LAB INVENTORY", 24, TEXT)
+	var title := _label("📜 ALCHEMY FIELD INVENTORY", 24, MAP_INK_HEADER)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-	var status := _label("INVENTORY READY", 13, MUTED)
+	var status := _label("REAGENTS READY", 13, MAP_MUTED)
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	header.add_child(status)
 	var close := Button.new()
-	close.text = "CLOSE  [I]"
+	close.text = "✖ CLOSE  [I]"
 	close.add_theme_font_size_override("font_size", 13)
-	_apply_button_style(close, NAVY_LIGHT, BLUE, CYAN)
+	_apply_button_style(close, MAP_MAHOGANY, MAP_GOLD, MAP_CREAM)
 	close.pressed.connect(_close_inventory)
 	header.add_child(close)
 
@@ -359,10 +384,10 @@ func _build_toolbar(parent: Container) -> void:
 	_search.custom_minimum_size = Vector2(0, 43)
 	_search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_search.add_theme_font_size_override("font_size", 16)
-	_search.add_theme_color_override("font_color", TEXT)
-	_search.add_theme_color_override("font_placeholder_color", MUTED)
-	_search.add_theme_stylebox_override("normal", _panel_style(Color("252c33"), BLUE, 1, 8))
-	_search.add_theme_stylebox_override("focus", _panel_style(Color("2c353e"), CYAN, 1, 8))
+	_search.add_theme_color_override("font_color", MAP_INK_DARK)
+	_search.add_theme_color_override("font_placeholder_color", MAP_MUTED)
+	_search.add_theme_stylebox_override("normal", _panel_style(Color("ebdcc4"), MAP_LEATHER, 1, 8))
+	_search.add_theme_stylebox_override("focus", _panel_style(Color("f7ebd8"), MAP_GOLD, 2, 8))
 	_search.text_changed.connect(func(value: String): _on_search_text_changed(value))
 	_search.text_submitted.connect(func(query: String): _on_search_submitted(query))
 	toolbar.add_child(_search)
@@ -387,10 +412,10 @@ func _build_body(parent: Container) -> void:
 	body.add_child(inventory_column)
 	var grid_header := HBoxContainer.new()
 	inventory_column.add_child(grid_header)
-	_storage_header = _label("CHEMICAL STORAGE", 15, TEXT)
+	_storage_header = _label("CHEMICAL STORAGE", 15, MAP_INK_HEADER)
 	_storage_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid_header.add_child(_storage_header)
-	var hint := _label("Click an item to inspect", 13, MUTED)
+	var hint := _label("Click an item to inspect", 13, MAP_MUTED)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	grid_header.add_child(hint)
 	var scroll := LabStorageGridArea.new()
@@ -407,21 +432,19 @@ func _build_body(parent: Container) -> void:
 	_grid.add_theme_constant_override("h_separation", 10)
 	_grid.add_theme_constant_override("v_separation", 10)
 	grid_holder.add_child(_grid)
-	_empty_state = _label("No matching items in this category.", 16, MUTED)
+	_empty_state = _label("No matching items in this category.", 16, MAP_MUTED)
 	_empty_state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_empty_state.custom_minimum_size = Vector2(0, 60)
 	grid_holder.add_child(_empty_state)
 
-	_ai_status_label = _label("", 13, CYAN)
+	_ai_status_label = _label("", 13, MAP_INK_HEADER)
 	_ai_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_ai_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	grid_holder.add_child(_ai_status_label)
 
-
-
 	var detail := PanelContainer.new()
 	detail.custom_minimum_size = Vector2(285, 0)
-	detail.add_theme_stylebox_override("panel", _panel_style(Color("252c33"), BLUE, 1, 10))
+	detail.add_theme_stylebox_override("panel", _panel_style(Color("ebdcc4"), MAP_MAHOGANY, 2, 10))
 	body.add_child(detail)
 	var detail_margin := MarginContainer.new()
 	detail_margin.add_theme_constant_override("margin_left", 18)
@@ -432,26 +455,26 @@ func _build_body(parent: Container) -> void:
 	var details := VBoxContainer.new()
 	details.add_theme_constant_override("separation", 9)
 	detail_margin.add_child(details)
-	details.add_child(_label("SELECTED SAMPLE", 12, CYAN))
-	_detail_name = _label("Select an item", 22, TEXT)
+	details.add_child(_label("SELECTED SAMPLE", 12, MAP_INK_HEADER))
+	_detail_name = _label("Select an item", 22, MAP_INK_DARK)
 	_detail_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	details.add_child(_detail_name)
-	_detail_formula = _label("", 13, MUTED)
+	_detail_formula = _label("", 13, MAP_MUTED)
 	details.add_child(_detail_formula)
 	_detail_icon = LabItemIcon.new()
 	_detail_icon.custom_minimum_size = Vector2(0, 112)
 	_detail_icon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	details.add_child(_detail_icon)
-	_detail_description = _label("", 14, MUTED)
+	_detail_description = _label("", 14, MAP_MUTED)
 	_detail_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detail_description.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	details.add_child(_detail_description)
-	_detail_quantity = _label("", 13, TEXT)
+	_detail_quantity = _label("", 13, MAP_INK_DARK)
 	details.add_child(_detail_quantity)
 	_equip_button = Button.new()
 	_equip_button.custom_minimum_size = Vector2(0, 42)
 	_equip_button.add_theme_font_size_override("font_size", 14)
-	_apply_button_style(_equip_button, Color("394651"), BLUE, TEXT)
+	_apply_button_style(_equip_button, MAP_LEATHER, MAP_GOLD, MAP_CREAM)
 	_equip_button.pressed.connect(_equip_or_return_selected)
 	details.add_child(_equip_button)
 
@@ -463,14 +486,14 @@ func _build_footer(parent: Container) -> void:
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 12)
 	parent.add_child(footer)
-	var slots_label := _label("QUICK SLOTS", 13, MUTED)
+	var slots_label := _label("QUICK SLOTS", 13, MAP_INK_HEADER)
 	footer.add_child(slots_label)
 	_hotbar = HBoxContainer.new()
 	_hotbar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_hotbar.alignment = BoxContainer.ALIGNMENT_CENTER
 	_hotbar.add_theme_constant_override("separation", 8)
 	footer.add_child(_hotbar)
-	var key_hint := _label("1–6 SELECT    •    CTRL + K SEARCH", 12, MUTED)
+	var key_hint := _label("1–6 SELECT    •    CTRL + K SEARCH", 12, MAP_INK_HEADER)
 	key_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	footer.add_child(key_hint)
 
@@ -486,9 +509,9 @@ func _refresh_tabs() -> void:
 	for category in _tab_buttons:
 		var tab: Button = _tab_buttons[category]
 		if category == _active_category:
-			_apply_button_style(tab, Color("3a4651"), BLUE, TEXT)
+			_apply_button_style(tab, Color("7a3e19"), MAP_GOLD_BRIGHT, MAP_CREAM)
 		else:
-			_apply_button_style(tab, NAVY, Color("4d5963"), MUTED)
+			_apply_button_style(tab, Color("c2a476"), MAP_LEATHER, MAP_INK_DARK)
 
 
 func _refresh_grid() -> void:
@@ -725,7 +748,7 @@ func _make_item_card(item) -> Button:
 	card.custom_minimum_size = Vector2(132, 144)
 	card.tooltip_text = "%s\n%s" % [item.get_title(), item.get_property("description", "")]
 	var selected: bool = item == _selected_item
-	_apply_button_style(card, Color("36434e") if selected else Color("252c33"), BLUE if selected else Color("4d5963"), TEXT)
+	_apply_button_style(card, Color("f5e5c9") if selected else Color("e6d3b3"), MAP_GOLD_BRIGHT if selected else MAP_LEATHER, MAP_INK_DARK)
 	card.pressed.connect(_select_item.bind(item))
 	var content := VBoxContainer.new()
 	content.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -742,11 +765,11 @@ func _make_item_card(item) -> Button:
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.set_item_data(str(item.get_property("kind", "chemical")), _item_color(item))
 	content.add_child(icon)
-	var formula := _label(str(item.get_property("formula", item.get_title())), 15, TEXT)
+	var formula := _label(str(item.get_property("formula", item.get_title())), 15, MAP_INK_HEADER)
 	formula.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	formula.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(formula)
-	var title_label := _label(item.get_title(), 11, MUTED)
+	var title_label := _label(item.get_title(), 11, MAP_MUTED)
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -811,7 +834,11 @@ func _make_slot_button(index: int, item, dimensions: Vector2) -> Button:
 		button.tooltip_text = "Slot %d: %s" % [index + 1, item.get_title()]
 	else:
 		button.text = "%d   —" % (index + 1)
-	_apply_button_style(button, Color("36434e") if index == _active_slot else NAVY, BLUE if index == _active_slot else Color("4d5963"), TEXT if item != null else MUTED)
+		
+	if index == _active_slot:
+		_apply_button_style(button, Color("7a3e19"), MAP_GOLD_BRIGHT, MAP_CREAM)
+	else:
+		_apply_button_style(button, Color("3d2111d4"), Color("5c3316"), MAP_CREAM if item != null else MAP_PARCHMENT)
 	button.pressed.connect(_select_slot.bind(index))
 	return button
 
@@ -921,7 +948,7 @@ func _unequip_slot(slot_index: int) -> void:
 
 func _create_drag_preview(item) -> Control:
 	var preview := PanelContainer.new()
-	preview.add_theme_stylebox_override("panel", _panel_style(Color(0.12, 0.16, 0.2, 0.9), BLUE, 2, 8))
+	preview.add_theme_stylebox_override("panel", _panel_style(Color("3b1d0ce6"), MAP_GOLD, 2, 8))
 
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 8)
@@ -933,7 +960,7 @@ func _create_drag_preview(item) -> Control:
 	icon.set_item_data(str(item.get_property("kind", "chemical")), _item_color(item))
 	hbox.add_child(icon)
 
-	var label := _label(str(item.get_property("formula", item.get_title())), 14, TEXT)
+	var label := _label(str(item.get_property("formula", item.get_title())), 14, MAP_CREAM)
 	hbox.add_child(label)
 
 	return preview
@@ -1147,12 +1174,12 @@ func _label(value: String, font_size: int, color: Color) -> Label:
 
 func _apply_button_style(button: Button, fill: Color, border: Color, font_color: Color) -> void:
 	button.add_theme_color_override("font_color", font_color)
-	button.add_theme_color_override("font_hover_color", TEXT)
-	button.add_theme_color_override("font_pressed_color", CYAN)
+	button.add_theme_color_override("font_hover_color", MAP_CREAM if font_color == MAP_CREAM else MAP_INK_DARK)
+	button.add_theme_color_override("font_pressed_color", MAP_GOLD_BRIGHT)
 	button.add_theme_stylebox_override("normal", _panel_style(fill, border, 1, 10))
 	button.add_theme_stylebox_override("hover", _panel_style(fill.lightened(0.08), border.lightened(0.12), 1, 10))
 	button.add_theme_stylebox_override("pressed", _panel_style(fill.darkened(0.1), border, 1, 10))
-	button.add_theme_stylebox_override("disabled", _panel_style(fill.darkened(0.3), Color("4d5963"), 1, 10))
+	button.add_theme_stylebox_override("disabled", _panel_style(fill.darkened(0.3), Color("5c3316"), 1, 10))
 
 
 func _panel_style(fill: Color, border: Color, width: int, radius: int) -> StyleBoxFlat:

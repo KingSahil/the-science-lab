@@ -250,10 +250,13 @@ func _process(_delta : float):
 		_update_multimesh()
 
 
-func _get_property_list() -> Array:
+func _get_property_list() -> Array[Dictionary]:
 	if _properties == null:
-		return []
-	return _properties
+		var empty_list: Array[Dictionary] = []
+		return empty_list
+	var list: Array[Dictionary] = []
+	list.assign(_properties)
+	return list
 
 
 func eval_grass_transform(pos : Vector3, normal : Vector3, scale : Vector3, rotated : float) -> Transform3D:
