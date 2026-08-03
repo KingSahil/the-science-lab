@@ -120,10 +120,9 @@ func _physics_process(delta):
 func handle_pouring(delta):
 	if not pour_ray: return
 	pour_ray.global_rotation = Vector3.ZERO
-	pour_ray.force_raycast_update()
 	if pour_ray.is_colliding():
 		var hit_object = pour_ray.get_collider()
-		if hit_object.has_method("fill_liquid"):
+		if hit_object and hit_object != self and hit_object.has_method("fill_liquid"):
 			hit_object.fill_liquid(FILL_SPEED * delta, chemical_name)
 
 func fill_liquid(amount, incoming_chem_type = ""):

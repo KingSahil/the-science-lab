@@ -30,10 +30,14 @@ func _process(delta: float) -> void:
 	_accumulated_time += delta * _wobble_intensity * wobble_speed
 	
 	if material_override:
-		material_override.set_shader_parameter(
-			"wobble",
-			(Vector2.RIGHT.rotated(_accumulated_time * TAU) * max_wobble * _wobble_intensity)
-		)
+		if _wobble_intensity > 0.001:
+			material_override.set_shader_parameter(
+				"wobble",
+				(Vector2.RIGHT.rotated(_accumulated_time * TAU) * max_wobble * _wobble_intensity)
+			)
+		elif _wobble_intensity > 0.0:
+			_wobble_intensity = 0.0
+			material_override.set_shader_parameter("wobble", Vector2.ZERO)
 
 # --- ADD THIS NEW FUNCTION TO THE BOTTOM ---
 # Paste this at the very bottom of LiquidWobble.gd

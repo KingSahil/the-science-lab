@@ -51,9 +51,9 @@ render_priority = 0
 shader = ExtResource("2_oopj3")
 shader_parameter/liquid_height = 0.007
 shader_parameter/liquid_surface_color = Color(0.281126, 0.648072, 0.964611, 1)
-shader_parameter/rim_emission_intensity = 0.0
+shader_parameter/rim_emission_intensity = 0.2
 shader_parameter/rim_exponent = 3.0
-shader_parameter/emission_intensity = 1.254
+shader_parameter/emission_intensity = 0.05
 shader_parameter/liquid_surface_gradient_size = 3.0
 shader_parameter/wobble = Vector2(0, 0)
 
