@@ -47,6 +47,7 @@ blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_86y4q")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c7anl"]
+resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("2_oopj3")
 shader_parameter/liquid_height = 0.007

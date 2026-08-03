@@ -1015,7 +1015,7 @@ func _on_player_object_dropped(obj) -> void:
 
 func _on_player_object_picked(obj) -> void:
 	if obj != null:
-		if "chemical_name" in obj or obj.name.begins_with("HeldChemicalFlask") or (obj.get_parent() != null and obj.get_parent().name.begins_with("HeldChemicalFlask")):
+		if obj.name.begins_with("HeldChemicalFlask") or (obj.get_parent() != null and obj.get_parent().name.begins_with("HeldChemicalFlask")):
 			var flask_node = obj
 			if not (obj is RigidBody3D) and obj.get_parent() != null:
 				flask_node = obj.get_parent()
@@ -1045,7 +1045,9 @@ func _update_held_flask(item) -> void:
 		return
 
 	if is_instance_valid(_player_controller.picked_object):
-		_player_controller.remove_object()
+		var picked = _player_controller.picked_object
+		if picked.name.begins_with("HeldChemicalFlask") or (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")):
+			_player_controller.remove_object()
 		
 	var world_scene = get_tree().current_scene
 	if world_scene == null:
@@ -1086,14 +1088,14 @@ func _update_held_flask(item) -> void:
 func _clear_held_flask() -> void:
 	if not is_instance_valid(_held_flask) and _player_controller != null and is_instance_valid(_player_controller.picked_object):
 		var picked = _player_controller.picked_object
-		if "chemical_name" in picked or picked.name.begins_with("HeldChemicalFlask") or (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")):
+		if picked.name.begins_with("HeldChemicalFlask") or (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")):
 			_held_flask = picked.get_parent() if (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")) else picked
 
 	if not is_instance_valid(_held_flask):
 		_held_flask = null
 		if _player_controller != null and is_instance_valid(_player_controller.picked_object):
 			var picked = _player_controller.picked_object
-			if "chemical_name" in picked or picked.name.begins_with("HeldChemicalFlask") or (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")):
+			if picked.name.begins_with("HeldChemicalFlask") or (picked.get_parent() != null and picked.get_parent().name.begins_with("HeldChemicalFlask")):
 				_player_controller.remove_object()
 		return
 
@@ -1106,7 +1108,7 @@ func _clear_held_flask() -> void:
 		elif _player_controller.picked_object == flask_to_free:
 			_player_controller.remove_object()
 
-	if is_instance_valid(flask_to_free) and flask_to_free.is_inside_tree():
+	if is_instance_valid(flask_to_free) and flask_to_free.is_inside_tree() and (flask_to_free.name.begins_with("HeldChemicalFlask") or (flask_to_free.get_parent() != null and flask_to_free.get_parent().name.begins_with("HeldChemicalFlask"))):
 		flask_to_free.queue_free()
 
 

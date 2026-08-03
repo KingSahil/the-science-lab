@@ -36,6 +36,11 @@ const FILL_SPEED = 0.2
 var last_reaction_time = 0.0
 
 func _ready():
+	if liquid_mesh:
+		var mat = liquid_mesh.material_override
+		if not mat: mat = liquid_mesh.get_active_material(0)
+		if mat:
+			liquid_mesh.material_override = mat.duplicate()
 	update_visuals()
 	
 	if chemical_name != "" and chemical_name != "Water":
@@ -88,8 +93,9 @@ func apply_color_by_name(color_name: String):
 		if not mat: mat = liquid_mesh.get_active_material(0)
 		
 		if mat:
-			if not mat.resource_local_to_scene:
-				mat.resource_local_to_scene = true
+			if not mat.resource_local_to_scene or mat == liquid_mesh.get_active_material(0):
+				mat = mat.duplicate()
+				liquid_mesh.material_override = mat
 				
 			# Fix shader parameter naming (using the one from your screenshot)
 			mat.set_shader_parameter("Liquid Surface Color", target_color)
