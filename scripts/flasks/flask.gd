@@ -104,6 +104,26 @@ func apply_color_by_name(color_name: String):
 			mat.set_shader_parameter("albedo", target_color)
 			mat.set_shader_parameter("liquid_surface_color", target_color)
 
+	if particles:
+		var part_mat = null
+		if particles.draw_pass_1 and particles.draw_pass_1.material:
+			part_mat = particles.draw_pass_1.material
+		if not part_mat and particles.material_override:
+			part_mat = particles.material_override
+			
+		if part_mat:
+			var dup_mat = part_mat.duplicate()
+			var drop_color = target_color
+			drop_color.a = clampf(target_color.a * 1.4, 0.4, 0.9)
+			if "albedo_color" in dup_mat:
+				dup_mat.albedo_color = drop_color
+			if particles.draw_pass_1:
+				var mesh_dup = particles.draw_pass_1.duplicate()
+				mesh_dup.material = dup_mat
+				particles.draw_pass_1 = mesh_dup
+			else:
+				particles.material_override = dup_mat
+
 # --- PHYSICS LOGIC ---
 func _physics_process(delta):
 
